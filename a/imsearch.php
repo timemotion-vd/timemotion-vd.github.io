@@ -22,7 +22,7 @@
 		<link rel="stylesheet" href="style/print.css?2019-3-14-0" media="print" />
 		<link rel="stylesheet" href="style/style.css?2019-3-14-0" media="screen,print" />
 		<link rel="stylesheet" href="style/template.css?2019-3-14-0" media="screen" />
-		<link rel="stylesheet" href="pcss/imsearch.css?2019-3-14-0-637187879084862465" media="screen,print" />
+		<link rel="stylesheet" href="pcss/imsearch.css?2019-3-14-0-637187911435922188" media="screen,print" />
 		<script src="res/jquery.js?2019-3-14-0"></script>
 		<script src="res/x5engine.js?2019-3-14-0" data-files-version="2019-3-14-0"></script>
 		<script>
@@ -30,7 +30,7 @@
 			x5engine.utils.currentPagePath = 'imsearch.php';
 			x5engine.boot.push(function () { x5engine.imPageToTop.initializeButton({}); });
 		</script>
-		<link rel="icon" href="favicon.png?2019-3-14-0-637187879084862465" type="image/png" />
+		<link rel="icon" href="favicon.png?2019-3-14-0-637187911435922188" type="image/png" />
 	</head>
 	<body>
 		<div id="imPageExtContainer">
@@ -40,13 +40,13 @@
 				<div id="imPage">
 					<header id="imHeader">
 						<h1 class="imHidden">Search - 自然裡童心未泯的創作家ㄧ邱傑</h1>
-						<div id="imHeaderObjects"><div id="imHeader_imObjectImage_01_wrapper" class="template-object-wrapper"><div id="imHeader_imObjectImage_01"><div id="imHeader_imObjectImage_01_container"><img src="images/header.png" title="" alt="" />
+						<div id="imHeaderObjects"><div id="imHeader_imObjectImage_01_wrapper" class="template-object-wrapper"><div id="imHeader_imObjectImage_01"><div id="imHeader_imObjectImage_01_container"><img src="images/header.jpg" title="" alt="" />
 </div></div></div></div>
 					</header>
 					<div id="imStickyBarContainer">
 						<div id="imStickyBarGraphics"></div>
 						<div id="imStickyBar">
-							<div id="imStickyBarObjects"><div id="imStickyBar_imObjectImage_01_wrapper" class="template-object-wrapper"><div id="imStickyBar_imObjectImage_01"><div id="imStickyBar_imObjectImage_01_container"><img src="images/header.png" title="" alt="" />
+							<div id="imStickyBarObjects"><div id="imStickyBar_imObjectImage_01_wrapper" class="template-object-wrapper"><div id="imStickyBar_imObjectImage_01"><div id="imStickyBar_imObjectImage_01_container"><img src="images/header.jpg" title="" alt="" />
 </div></div></div></div>
 						</div>
 					</div>
@@ -71,7 +71,7 @@
 						
 					</main>
 					<footer id="imFooter">
-						<div id="imFooterObjects"><div id="imFooter_imObjectImage_01_wrapper" class="template-object-wrapper"><div id="imFooter_imObjectImage_01"><div id="imFooter_imObjectImage_01_container"><img src="images/footer_bg.png" title="" alt="" />
+						<div id="imFooterObjects"><div id="imFooter_imObjectImage_01_wrapper" class="template-object-wrapper"><div id="imFooter_imObjectImage_01"><div id="imFooter_imObjectImage_01_container"><img src="images/footer_bg.jpg" title="" alt="" />
 </div></div></div></div>
 					</footer>
 				</div>

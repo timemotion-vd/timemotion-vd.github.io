@@ -44,10 +44,10 @@ $imSettings['password_policy'] = array(
 
 
 $imSettings['admin'] = array(
-	'icon' => 'admin/images/logo_jz1efdrw.png',
+	'icon' => 'admin/images/logo_so2ik59t.png',
 	'notification_public_key' => '4baff899e0c8c328',
 	'notification_private_key' => '63927fea6a9e7fc1',
-	'enable_manager_notifications' => false,
+	'enable_manager_notifications' => true,
 	'theme' => 'orange',
 	'extra-dashboard' => array(),
 	'extra-links' => array()
