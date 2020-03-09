@@ -2,27 +2,27 @@
 <!DOCTYPE html><!-- HTML5 -->
 <html prefix="og: http://ogp.me/ns#" lang="zh-tw" dir="ltr">
 	<head>
-		<title>Search - 自然裡童心未泯的創作家ㄧ邱傑</title>
+		<title>Search - 自然裡童心未泯的創作家 - 邱傑</title>
 		<meta charset="utf-8" />
 		<!--[if IE]><meta http-equiv="ImageToolbar" content="False" /><![endif]-->
-		<meta name="author" content="Time Motion visual design" />
+		<meta name="author" content="泰墨創意影像" />
 		<meta name="generator" content="Incomedia WebSite X5 Pro 2019.3.14 - www.websitex5.com" />
 		<meta property="og:locale" content="tw" />
 		<meta property="og:type" content="website" />
 		<meta property="og:url" content="https://timemotion-vd.github.io/a/imsearch.php" />
 		<meta property="og:title" content="Search" />
-		<meta property="og:site_name" content="自然裡童心未泯的創作家ㄧ邱傑" />
+		<meta property="og:site_name" content="自然裡童心未泯的創作家 - 邱傑" />
 		<meta property="og:image" content="https://timemotion-vd.github.io/a/favImage.png" />
 		<meta property="og:image:type" content="image/png">
-		<meta property="og:image:width" content="3013">
-		<meta property="og:image:height" content="1659">
-		<meta name="viewport" content="width=1150" />
+		<meta property="og:image:width" content="1920">
+		<meta property="og:image:height" content="825">
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
 		
 		<link rel="stylesheet" href="style/reset.css?2019-3-14-0" media="screen,print" />
 		<link rel="stylesheet" href="style/print.css?2019-3-14-0" media="print" />
 		<link rel="stylesheet" href="style/style.css?2019-3-14-0" media="screen,print" />
 		<link rel="stylesheet" href="style/template.css?2019-3-14-0" media="screen" />
-		<link rel="stylesheet" href="pcss/imsearch.css?2019-3-14-0-637187911435922188" media="screen,print" />
+		<link rel="stylesheet" href="pcss/imsearch.css?2019-3-14-0-637193512835136474" media="screen,print" />
 		<script src="res/jquery.js?2019-3-14-0"></script>
 		<script src="res/x5engine.js?2019-3-14-0" data-files-version="2019-3-14-0"></script>
 		<script>
@@ -30,7 +30,8 @@
 			x5engine.utils.currentPagePath = 'imsearch.php';
 			x5engine.boot.push(function () { x5engine.imPageToTop.initializeButton({}); });
 		</script>
-		<link rel="icon" href="favicon.png?2019-3-14-0-637187911435922188" type="image/png" />
+		<link rel="icon" href="favicon.png?2019-3-14-0-637193512835116477" type="image/png" />
+		<script>(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)})(window,document,'script','//www.google-analytics.com/analytics.js','ga');ga('create', 'UA-152835-10','auto');ga('set', 'anonymizeIp', true);ga('send', 'pageview');</script>
 	</head>
 	<body>
 		<div id="imPageExtContainer">
@@ -39,15 +40,45 @@
 				<div id="imFooterBg"></div>
 				<div id="imPage">
 					<header id="imHeader">
-						<h1 class="imHidden">Search - 自然裡童心未泯的創作家ㄧ邱傑</h1>
-						<div id="imHeaderObjects"><div id="imHeader_imObjectImage_01_wrapper" class="template-object-wrapper"><div id="imHeader_imObjectImage_01"><div id="imHeader_imObjectImage_01_container"><img src="images/header.jpg" title="" alt="" />
-</div></div></div></div>
+						<h1 class="imHidden">Search - 自然裡童心未泯的創作家 - 邱傑</h1>
+						<div id="imHeaderObjects"><div id="imHeader_imMenuObject_01_wrapper" class="template-object-wrapper"><!-- UNSEARCHABLE --><div id="imHeader_imMenuObject_01"><div id="imHeader_imMenuObject_01_container"><div class="hamburger-button hamburger-component"><div><div><div class="hamburger-bar"></div><div class="hamburger-bar"></div><div class="hamburger-bar"></div></div></div></div><div class="hamburger-menu-background-container hamburger-component">
+	<div class="hamburger-menu-background menu-mobile menu-mobile-animated hidden">
+		<div class="hamburger-menu-close-button"><span>&times;</span></div>
+	</div>
+</div>
+<ul class="menu-mobile-animated hidden">
+	<li class="imMnMnFirst imLevel" data-link-paths=",/a/index.html,/a/" data-link-anchor="關於作者" data-link-hash="-1336418051"><div class="label-wrapper"><div class="label-inner-wrapper"><a href="index.html#關於作者" class="label" onclick="return x5engine.utils.location('index.html#關於作者', null, false)">關於作者</a></div></div></li><li class="imMnMnMiddle imLevel"><div class="label-wrapper"><div class="label-inner-wrapper"><span class="label">寫作年表</span></div></div></li><li class="imMnMnMiddle imLevel"><div class="label-wrapper"><div class="label-inner-wrapper"><span class="label">作品展示</span></div></div></li><li class="imMnMnMiddle imLevel"><div class="label-wrapper"><div class="label-inner-wrapper"><span class="label">展覽資訊</span></div></div></li><li class="imMnMnMiddle imLevel"><div class="label-wrapper"><div class="label-inner-wrapper"><span class="label">展品清單</span></div></div></li><li class="imMnMnMiddle imLevel"><div class="label-wrapper"><div class="label-inner-wrapper"><span class="label">影片觀賞</span></div></div></li><li class="imMnMnLast imLevel"><div class="label-wrapper"><div class="label-inner-wrapper"><span class="label">活動花絮</span></div></div></li></ul></div></div><!-- UNSEARCHABLE END --><script>
+var imHeader_imMenuObject_01_settings = {
+	'menuId': 'imHeader_imMenuObject_01',
+	'responsiveMenuEffect': 'slide',
+	'animationDuration': 500,
+}
+x5engine.boot.push(function(){x5engine.initMenu(imHeader_imMenuObject_01_settings)});
+$(function () {$('#imHeader_imMenuObject_01_container ul li').not('.imMnMnSeparator').each(function () {    var $this = $(this), timeout = 0;    $this.on('mouseenter', function () {        if($(this).parents('#imHeader_imMenuObject_01_container-menu-opened').length > 0) return;         clearTimeout(timeout);        setTimeout(function () { $this.children('ul, .multiple-column').stop(false, false).fadeIn(); }, 250);    }).on('mouseleave', function () {        if($(this).parents('#imHeader_imMenuObject_01_container-menu-opened').length > 0) return;         timeout = setTimeout(function () { $this.children('ul, .multiple-column').stop(false, false).fadeOut(); }, 250);    });});});
+$(function () {$('#imHeader_imMenuObject_01_container > ul > li').not('.imMnMnSeparator').each(function () {    var $this = $(this), timeout = 0;    $this.on('mouseenter', function () {        clearTimeout(timeout);        var overElem = $this.children('.label-wrapper-over');        if(overElem.length == 0)            overElem = $this.children('.label-wrapper').clone().addClass('label-wrapper-over').appendTo($this);        setTimeout(function(){overElem.addClass('animated');}, 10);    }).on('mouseleave', function () {        var overElem = $this.children('.label-wrapper-over');        overElem.removeClass('animated');        timeout = setTimeout(function(){overElem.remove();}, 500);    });});});
+</script>
+</div></div>
 					</header>
 					<div id="imStickyBarContainer">
 						<div id="imStickyBarGraphics"></div>
 						<div id="imStickyBar">
-							<div id="imStickyBarObjects"><div id="imStickyBar_imObjectImage_01_wrapper" class="template-object-wrapper"><div id="imStickyBar_imObjectImage_01"><div id="imStickyBar_imObjectImage_01_container"><img src="images/header.jpg" title="" alt="" />
-</div></div></div></div>
+							<div id="imStickyBarObjects"><div id="imStickyBar_imMenuObject_01_wrapper" class="template-object-wrapper"><!-- UNSEARCHABLE --><div id="imStickyBar_imMenuObject_01"><div id="imStickyBar_imMenuObject_01_container"><div class="hamburger-button hamburger-component"><div><div><div class="hamburger-bar"></div><div class="hamburger-bar"></div><div class="hamburger-bar"></div></div></div></div><div class="hamburger-menu-background-container hamburger-component">
+	<div class="hamburger-menu-background menu-mobile menu-mobile-animated hidden">
+		<div class="hamburger-menu-close-button"><span>&times;</span></div>
+	</div>
+</div>
+<ul class="menu-mobile-animated hidden">
+	<li class="imMnMnFirst imLevel" data-link-paths=",/a/index.html,/a/" data-link-anchor="關於作者" data-link-hash="-1336418051"><div class="label-wrapper"><div class="label-inner-wrapper"><a href="index.html#關於作者" class="label" onclick="return x5engine.utils.location('index.html#關於作者', null, false)">關於作者</a></div></div></li><li class="imMnMnMiddle imLevel"><div class="label-wrapper"><div class="label-inner-wrapper"><span class="label">寫作年表</span></div></div></li><li class="imMnMnMiddle imLevel"><div class="label-wrapper"><div class="label-inner-wrapper"><span class="label">作品展示</span></div></div></li><li class="imMnMnMiddle imLevel"><div class="label-wrapper"><div class="label-inner-wrapper"><span class="label">展覽資訊</span></div></div></li><li class="imMnMnMiddle imLevel"><div class="label-wrapper"><div class="label-inner-wrapper"><span class="label">展品清單</span></div></div></li><li class="imMnMnMiddle imLevel"><div class="label-wrapper"><div class="label-inner-wrapper"><span class="label">影片觀賞</span></div></div></li><li class="imMnMnLast imLevel"><div class="label-wrapper"><div class="label-inner-wrapper"><span class="label">活動花絮</span></div></div></li></ul></div></div><!-- UNSEARCHABLE END --><script>
+var imStickyBar_imMenuObject_01_settings = {
+	'menuId': 'imStickyBar_imMenuObject_01',
+	'responsiveMenuEffect': 'slide',
+	'animationDuration': 1000,
+}
+x5engine.boot.push(function(){x5engine.initMenu(imStickyBar_imMenuObject_01_settings)});
+$(function () {$('#imStickyBar_imMenuObject_01_container ul li').not('.imMnMnSeparator').each(function () {    var $this = $(this), timeout = 0;    $this.on('mouseenter', function () {        if($(this).parents('#imStickyBar_imMenuObject_01_container-menu-opened').length > 0) return;         clearTimeout(timeout);        setTimeout(function () { $this.children('ul, .multiple-column').stop(false, false).fadeIn(); }, 250);    }).on('mouseleave', function () {        if($(this).parents('#imStickyBar_imMenuObject_01_container-menu-opened').length > 0) return;         timeout = setTimeout(function () { $this.children('ul, .multiple-column').stop(false, false).fadeOut(); }, 250);    });});});
+$(function () {$('#imStickyBar_imMenuObject_01_container > ul > li').not('.imMnMnSeparator').each(function () {    var $this = $(this), timeout = 0;    $this.on('mouseenter', function () {        clearTimeout(timeout);        var overElem = $this.children('.label-wrapper-over');        if(overElem.length == 0)            overElem = $this.children('.label-wrapper').clone().addClass('label-wrapper-over').appendTo($this);        setTimeout(function(){overElem.addClass('animated');}, 10);    }).on('mouseleave', function () {        var overElem = $this.children('.label-wrapper-over');        overElem.removeClass('animated');        timeout = setTimeout(function(){overElem.remove();}, 500);    });});});
+</script>
+</div></div>
 						</div>
 					</div>
 					<a class="imHidden" href="#imGoToCont" title="Skip the main menu">Go to content</a>
@@ -71,8 +102,7 @@
 						
 					</main>
 					<footer id="imFooter">
-						<div id="imFooterObjects"><div id="imFooter_imObjectImage_01_wrapper" class="template-object-wrapper"><div id="imFooter_imObjectImage_01"><div id="imFooter_imObjectImage_01_container"><img src="images/footer_bg.jpg" title="" alt="" />
-</div></div></div></div>
+						<div id="imFooterObjects"><div id="imFooter_imObjectTitle_01_wrapper" class="template-object-wrapper"><div id="imFooter_imObjectTitle_01"><span id ="imFooter_imObjectTitle_01_text" >Time Motion Visual Design © 2020</span></div></div></div>
 					</footer>
 				</div>
 				<span class="imHidden"><a href="#imGoToCont" title="Read this page again">Back to content</a></span>

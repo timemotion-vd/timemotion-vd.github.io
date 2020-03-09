@@ -1,7 +1,7 @@
 <?php
 
 // Users data
-$imSettings['access']['webregistrations_gid'] = 'bvh2h73u';
+$imSettings['access']['webregistrations_gid'] = '4dokclsw';
 $imSettings['access']['users'] = array(
 	'example@example.com' => array(
 		'groups' => array('0l1ggk0h'),

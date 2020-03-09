@@ -12,7 +12,7 @@ $imSettings['general'] = array(
 	'homepage_url' => 'https://timemotion-vd.github.io/a/index.html',
 	'icon' => 'https://timemotion-vd.github.io/a/favImage.png',
 	'version' => '2019.3.14.0',
-	'sitename' => '自然裡童心未泯的創作家ㄧ邱傑',
+	'sitename' => '自然裡童心未泯的創作家 - 邱傑',
 	'lang_code' => 'zh-tw',
 	'public_folder' => '',
 	'salt' => 'vmztql83h0o37m362d12kf5fnodp5tknvksu4wtyk888sdp935l0',
@@ -44,11 +44,11 @@ $imSettings['password_policy'] = array(
 
 
 $imSettings['admin'] = array(
-	'icon' => 'admin/images/logo_so2ik59t.png',
+	'icon' => 'admin/images/logo_qos90vq2.png',
 	'notification_public_key' => '4baff899e0c8c328',
 	'notification_private_key' => '63927fea6a9e7fc1',
-	'enable_manager_notifications' => true,
-	'theme' => 'orange',
+	'enable_manager_notifications' => false,
+	'theme' => 'dark',
 	'extra-dashboard' => array(),
 	'extra-links' => array()
 );
@@ -157,16 +157,16 @@ $imSettings['dynamicobjects'] = array(	'template' => array(
 
 $ImMailer->emailType = 'phpmailer';
 $ImMailer->exposeWsx5 = true;
-$ImMailer->header = '<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">' . "\n" . '<html>' . "\n" . '<head>' . "\n" . '<meta http-equiv="content-type" content="text/html; charset=utf-8">' . "\n" . '<meta name="generator" content="Incomedia WebSite X5 Professional 2019.3.14 - www.websitex5.com">' . "\n" . '</head>' . "\n" . '<body bgcolor="#37474F" style="background-color: #37474F;">' . "\n\t" . '<table border="0" cellpadding="0" align="center" cellspacing="0" style="padding: 0; margin: 0 auto; width: 700px;">' . "\n\t" . '<tr><td id="imEmailContent" style="min-height: 300px; padding: 10px; font: normal normal normal 12pt \'Tahoma\'; color: #000000; background-color: #FFFFFF; text-decoration: none; text-align: left; width: 700px; border-style: solid; border-color: #000000; border-top-width: 1px; border-right-width: 1px; border-bottom-width: 1px; border-left-width: 1px; background-color: #FFFFFF" width="700px">' . "\n\t\t";
-$ImMailer->footer = "\n\t" . '</td></tr>' . "\n\t" . '</table>' . "\n" . '<table width="100%"><tr><td id="imEmailFooter" style="font: normal normal normal 9pt \'Tahoma\'; color: #FFFFFF; background-color: transparent; text-decoration: none; text-align: center;  padding: 10px; margin-top: 5px;background-color: transparent">' . "\n\t\t" . 'This e-mail contains information that is intended solely for the above mentioned addressee.<br>If you have received this e-mail by error, please notify the sender immediately and destroy it, without copying it.' . "\n\t" . '</td></tr></table>' . "\n\t" . '</body>' . "\n" . '</html>';
+$ImMailer->header = '<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">' . "\n" . '<html>' . "\n" . '<head>' . "\n" . '<meta http-equiv="content-type" content="text/html; charset=utf-8">' . "\n" . '<meta name="generator" content="Incomedia WebSite X5 Professional 2019.3.14 - www.websitex5.com">' . "\n" . '</head>' . "\n" . '<body bgcolor="#5BB1AE" style="background-color: #5BB1AE;">' . "\n\t" . '<table border="0" cellpadding="0" align="center" cellspacing="0" style="padding: 0; margin: 0 auto; width: 700px;">' . "\n\t" . '<tr><td id="imEmailContent" style="min-height: 300px; padding: 10px; font: normal normal normal 12pt \'Noto Sans TC Regular\'; color: #000000; background-color: #FFFFFF; text-decoration: none; text-align: left; width: 700px; background-color: #FFFFFF" width="700px">' . "\n\t\t";
+$ImMailer->footer = "\n\t" . '</td></tr>' . "\n\t" . '</table>' . "\n" . '<table width="100%"><tr><td id="imEmailFooter" style="font: normal normal normal 9pt \'Noto Sans TC Regular\'; color: #FFFFFF; background-color: transparent; text-decoration: none; text-align: center;  padding: 10px; margin-top: 5px;background-color: transparent">' . "\n\t\t" . 'This e-mail contains information that is intended solely for the above mentioned addressee.<br>If you have received this e-mail by error, please notify the sender immediately and destroy it, without copying it.' . "\n\t" . '</td></tr></table>' . "\n\t" . '</body>' . "\n" . '</html>';
 $ImMailer->bodyBackground = '#FFFFFF';
 $ImMailer->bodyBackgroundEven = '#FFFFFF';
 $ImMailer->bodyBackgroundOdd = '#F0F0F0';
 $ImMailer->bodyBackgroundBorder = '#CDCDCD';
 $ImMailer->bodyTextColorOdd = '#000000';
 $ImMailer->bodySeparatorBorderColor = '#000000';
-$ImMailer->emailBackground = '#37474F';
-$ImMailer->emailContentStyle = 'font: normal normal normal 12pt \'Tahoma\'; color: #000000; background-color: #FFFFFF; text-decoration: none; text-align: left; ';
-$ImMailer->emailContentFontFamily = 'font-family: Tahoma;';
+$ImMailer->emailBackground = '#5BB1AE';
+$ImMailer->emailContentStyle = 'font: normal normal normal 12pt \'Noto Sans TC Regular\'; color: #000000; background-color: #FFFFFF; text-decoration: none; text-align: left; ';
+$ImMailer->emailContentFontFamily = 'font-family: Noto Sans TC Regular;';
 
 // End of file x5settings.php
