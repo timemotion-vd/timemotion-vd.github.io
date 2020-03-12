@@ -157,8 +157,8 @@ $imSettings['dynamicobjects'] = array(	'template' => array(
 
 $ImMailer->emailType = 'phpmailer';
 $ImMailer->exposeWsx5 = true;
-$ImMailer->header = '<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">' . "\n" . '<html>' . "\n" . '<head>' . "\n" . '<meta http-equiv="content-type" content="text/html; charset=utf-8">' . "\n" . '<meta name="generator" content="Incomedia WebSite X5 Professional 2019.3.16 - www.websitex5.com">' . "\n" . '</head>' . "\n" . '<body bgcolor="#5BB1AE" style="background-color: #5BB1AE;">' . "\n\t" . '<table border="0" cellpadding="0" align="center" cellspacing="0" style="padding: 0; margin: 0 auto; width: 700px;">' . "\n\t" . '<tr><td id="imEmailContent" style="min-height: 300px; padding: 10px; font: normal normal normal 12pt \'Noto Sans TC Regular\'; color: #000000; background-color: #FFFFFF; text-decoration: none; text-align: left; width: 700px; background-color: #FFFFFF" width="700px">' . "\n\t\t";
-$ImMailer->footer = "\n\t" . '</td></tr>' . "\n\t" . '</table>' . "\n" . '<table width="100%"><tr><td id="imEmailFooter" style="font: normal normal normal 9pt \'Noto Sans TC Regular\'; color: #FFFFFF; background-color: transparent; text-decoration: none; text-align: center;  padding: 10px; margin-top: 5px;background-color: transparent">' . "\n\t\t" . 'This e-mail contains information that is intended solely for the above mentioned addressee.<br>If you have received this e-mail by error, please notify the sender immediately and destroy it, without copying it.' . "\n\t" . '</td></tr></table>' . "\n\t" . '</body>' . "\n" . '</html>';
+$ImMailer->header = '<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">' . "\n" . '<html>' . "\n" . '<head>' . "\n" . '<meta http-equiv="content-type" content="text/html; charset=utf-8">' . "\n" . '<meta name="generator" content="Incomedia WebSite X5 Professional 2019.3.16 - www.websitex5.com">' . "\n" . '</head>' . "\n" . '<body bgcolor="#5BB1AE" style="background-color: #5BB1AE;">' . "\n\t" . '<table border="0" cellpadding="0" align="center" cellspacing="0" style="padding: 0; margin: 0 auto; width: 700px;">' . "\n\t" . '<tr><td id="imEmailContent" style="min-height: 300px; padding: 10px; font: normal normal normal 12pt \'Taipei Sans TC Beta\'; color: #000000; background-color: #FFFFFF; text-decoration: none; text-align: left; width: 700px; background-color: #FFFFFF" width="700px">' . "\n\t\t";
+$ImMailer->footer = "\n\t" . '</td></tr>' . "\n\t" . '</table>' . "\n" . '<table width="100%"><tr><td id="imEmailFooter" style="font: normal normal normal 9pt \'Taipei Sans TC Beta\'; color: #FFFFFF; background-color: transparent; text-decoration: none; text-align: center;  padding: 10px; margin-top: 5px;background-color: transparent">' . "\n\t\t" . 'This e-mail contains information that is intended solely for the above mentioned addressee.<br>If you have received this e-mail by error, please notify the sender immediately and destroy it, without copying it.' . "\n\t" . '</td></tr></table>' . "\n\t" . '</body>' . "\n" . '</html>';
 $ImMailer->bodyBackground = '#FFFFFF';
 $ImMailer->bodyBackgroundEven = '#FFFFFF';
 $ImMailer->bodyBackgroundOdd = '#F0F0F0';
@@ -166,7 +166,7 @@ $ImMailer->bodyBackgroundBorder = '#CDCDCD';
 $ImMailer->bodyTextColorOdd = '#000000';
 $ImMailer->bodySeparatorBorderColor = '#000000';
 $ImMailer->emailBackground = '#5BB1AE';
-$ImMailer->emailContentStyle = 'font: normal normal normal 12pt \'Noto Sans TC Regular\'; color: #000000; background-color: #FFFFFF; text-decoration: none; text-align: left; ';
-$ImMailer->emailContentFontFamily = 'font-family: Noto Sans TC Regular;';
+$ImMailer->emailContentStyle = 'font: normal normal normal 12pt \'Taipei Sans TC Beta\'; color: #000000; background-color: #FFFFFF; text-decoration: none; text-align: left; ';
+$ImMailer->emailContentFontFamily = 'font-family: Taipei Sans TC Beta;';
 
 // End of file x5settings.php
