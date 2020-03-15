@@ -22,7 +22,7 @@
 		<link rel="stylesheet" href="style/print.css?2019-3-16-1" media="print" />
 		<link rel="stylesheet" href="style/style.css?2019-3-16-1" media="screen,print" />
 		<link rel="stylesheet" href="style/template.css?2019-3-16-1" media="screen" />
-		<link rel="stylesheet" href="pcss/imsearch.css?2019-3-16-1-637197454527229031" media="screen,print" />
+		<link rel="stylesheet" href="pcss/imsearch.css?2019-3-16-1-637199159795135006" media="screen,print" />
 		<script src="res/jquery.js?2019-3-16-1"></script>
 		<script src="res/x5engine.js?2019-3-16-1" data-files-version="2019-3-16-1"></script>
 		<script>
@@ -30,7 +30,7 @@
 			x5engine.utils.currentPagePath = 'imsearch.php';
 			x5engine.boot.push(function () { x5engine.imPageToTop.initializeButton({}); });
 		</script>
-		<link rel="icon" href="favicon.png?2019-3-16-1-637197454527179061" type="image/png" />
+		<link rel="icon" href="favicon.png?2019-3-16-1-637199159795125010" type="image/png" />
 		<script>(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)})(window,document,'script','//www.google-analytics.com/analytics.js','ga');ga('create', 'UA-152835-10','auto');ga('set', 'anonymizeIp', true);ga('send', 'pageview');</script>
 	</head>
 	<body>
