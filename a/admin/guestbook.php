@@ -40,7 +40,7 @@ if (strlen($id)) {
 			$gb->loadXML($data['folder']);
 		break;
 		case "db":
-			$gb->loadDb($data['host'], $data['user'], $data['password'], $data['database'], $data['table']);
+			$gb->loadDb(ImDb::from_db_data(getDbData($data['dbid'])), $data['table']);
 		break;
 	}
 

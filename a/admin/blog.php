@@ -40,7 +40,7 @@ if (isset($_GET['category']) && isset($_GET['post'])) {
 			$topic->loadXML($data['folder']);
 		break;
 		case "db":
-			$topic->loadDb($data['dbhost'], $data['dbuser'], $data['dbpassword'], $data['dbname'], $data['dbtable']);
+			$topic->loadDb(ImDb::from_db_data(getDbData($data['dbid'])), $data['dbtable']);
 		break;
 	}
 

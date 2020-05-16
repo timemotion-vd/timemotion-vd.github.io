@@ -1,15 +1,10 @@
 <?php
-
-if (!defined('PHP_MIN_VERSION')) {
-    define('PHP_MIN_VERSION', '5.6.0');
-}
-
 /**
  * Server Test Class
  * @access public
  */
 class imTest {
-
+    const PHP_MIN_VERSION = '7.1.0';
 
     /**
      * Utility that combine a series of paths
@@ -64,7 +59,7 @@ class imTest {
      */
     public static function php_version_test()
     {
-        if (!function_exists("version_compare") || version_compare(PHP_VERSION, PHP_MIN_VERSION) < 0)
+        if (!function_exists("version_compare") || version_compare(PHP_VERSION, self::PHP_MIN_VERSION) < 0)
             return false;
         return true;
     }

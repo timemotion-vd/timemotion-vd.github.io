@@ -336,7 +336,7 @@ class imBlog
         foreach ($bs['posts'] as $post) {
             $comments = new ImTopic($bs['file_prefix'] . 'pc' . $post['id'], "../", $post['rel_url']);
             if ($bs['sendmode'] == "db")
-                $comments->loadDb($bs['dbhost'], $bs['dbuser'], $bs['dbpassword'], $bs['dbname'], $bs['dbtable']);
+                $comments->loadDb(ImDb::from_db_data(getDbData($bs['dbid'])), $bs['dbtable']);
             else
                 $comments->loadXML($bs['folder']);
             foreach ($comments->getComments($from, $to) as $comment) {
@@ -366,7 +366,7 @@ class imBlog
         foreach ($bs['posts'] as $post) {
             $comments = new ImTopic($bs['file_prefix'] . 'pc' . $post['id'], "../", $post['rel_url']);
             if ($bs['sendmode'] == "db")
-                $comments->loadDb($bs['dbhost'], $bs['dbuser'], $bs['dbpassword'], $bs['dbname'], $bs['dbtable']);
+                $comments->loadDb(ImDb::from_db_data(getDbData($bs['dbid'])), $bs['dbtable']);
             else
                 $comments->loadXML($bs['folder']);
             foreach ($comments->getComments($from, $to, false) as $comment) {
@@ -846,7 +846,7 @@ class imBlog
                     $this->comments->setCommentsPerPage($this->comPerPage);
                     // Show the comments
                     if ($bs['sendmode'] == "db")
-                        $this->comments->loadDb($bs['dbhost'], $bs['dbuser'], $bs['dbpassword'], $bs['dbname'], $bs['dbtable']);
+                        $this->comments->loadDb(ImDb::from_db_data(getDbData($bs['dbid'])), $bs['dbtable']);
                     else
                         $this->comments->loadXML($bs['folder']);
                     $this->comments->setPostUrl($bp['rel_url']);
@@ -1458,7 +1458,7 @@ class Configuration
         if (self::$analytics == false) {
             $prefix = $imSettings['analytics']['database']['table'];
             $dbconf = getDbData($imSettings['analytics']['database']['id']);
-            self::$analytics =  new Analytics($dbconf['host'], $dbconf['user'], $dbconf['password'], $dbconf['database'], $prefix);
+            self::$analytics =  new Analytics(ImDb::from_db_data($dbconf), $prefix);
         }
 
         return self::$analytics;
@@ -1521,7 +1521,7 @@ class Configuration
             self::$privateArea = new imPrivateArea();
             if (isset($imSettings['access']['dbid'])) {
                 $db = getDbData($imSettings['access']['dbid']);
-                self::$privateArea->setDbData($db['host'], $db['user'], $db['password'], $db['database'], $imSettings['access']['dbtable']);
+                self::$privateArea->setDbData(ImDb::from_db_data($db), $imSettings['access']['dbtable']);
             }
         }
         return self::$privateArea;
@@ -1553,7 +1553,7 @@ class Configuration
 
         if (isset($data['dbid'])) {
             $db = getDbData($data['dbid']);
-            $dynObj->loadFromDb($db['host'], $db['user'], $db['password'], $db['database'], $data['dbtable']);
+            $dynObj->loadFromDb(ImDb::from_db_data($db), $data['dbtable']);
         } else if (isset($data['subfolder'])) {
             $dynObj->loadFromFile(pathCombine(array($imSettings['general']['public_folder'], $data['subfolder'])));
         }
@@ -2000,6 +2000,32 @@ class ImCart {
             }
         }
         return $filteredObj;
+    }
+
+    public function get_discounted_products()
+    {
+        $discounted_prds_regardless_of_coupon_and_quantity = array();
+        $discounted_prds_because_of_quantity = array();
+        foreach ($this->products as $prd_id => $prd_info) {
+            $is_discounted_regardless_of_coupon_and_quantity = false;
+            if (isset($prd_info['discount'])) {
+                $d = $prd_info['discount'];
+                $start_date_check = !isset($d['start_date']) || time() > $d['start_date'];
+                $end_date_check = !isset($d['end_date']) || time() < $d['end_date'];
+                $coupon_check = !isset($d['coupon']);
+                if ($start_date_check && $end_date_check && $coupon_check) {
+                    $is_discounted_regardless_of_coupon_and_quantity = true;
+                    $discounted_prds_regardless_of_coupon_and_quantity[] = $prd_id;
+                }
+            }
+            if (isset($prd_info['quantity_discounts']) && !$is_discounted_regardless_of_coupon_and_quantity) {
+                $discounted_prds_because_of_quantity[] = $prd_id;
+            }
+        }
+        return array(
+            'regardlessOfCouponAndQuantity' => $discounted_prds_regardless_of_coupon_and_quantity,
+            'becauseOfQuantity' => $discounted_prds_because_of_quantity
+        );
     }
 
 
@@ -2472,8 +2498,10 @@ class ImCart {
             throw new Exception(l10n("cart_download_db_error", "Unable to connect to the database"));
         }
 
-        $row = $this->db->query("SELECT * FROM `" . $this->table_prefix . $this->settings['products_table'] . "`
-                                 WHERE `download_hash`='" . $this->db->escapeString($downloadHash) . "'");
+        $row = $this->db->select(array(
+            'from' => $this->table_prefix . $this->settings['products_table'],
+            'where' => array('download_hash' => $downloadHash)
+        ));
 
         // Check that the record really exists
         if (!$row || !count($row)) {
@@ -2558,10 +2586,10 @@ class ImCart {
      *
      * @return Boolean
      */
-    public function setDatabaseConnection($host, $user, $pwd, $db, $table_prefix)
+    public function setDatabaseConnection($db, $table_prefix)
     {
         $this->table_prefix = $table_prefix;
-        $this->db = new ImDb($host, $user, $pwd, $db);
+        $this->db = $db;
         if ($this->createTables()) {
             return true;
         }
@@ -2595,8 +2623,11 @@ class ImCart {
         foreach ($this->orderData['products'] as $hash => $product) {
             $where[] = "(`id`='" . $this->db->escapeString($product['id']) . "' AND `quantity`<" . $product['quantity'] . ")";
         }
-        $query = "SELECT `id`, `quantity` FROM `" . $this->table_prefix . $this->settings['dynamicproducts_table'] . "` WHERE (" . implode(" OR ", $where) . ")";
-        $results = $this->db->query($query);
+        $results = $this->db->select(array(
+            'select' => array('id', 'quantity'),
+            'from' => $this->table_prefix . $this->settings['dynamicproducts_table'],
+            'where_flat' => array('(' . implode(' OR ', $where) . ')')
+        ));
         if (count($results) > 0) {
             foreach ($results as $dbProduct) {
                 foreach ($this->orderData['products'] as $hash => $cartProduct) {
@@ -2734,140 +2765,99 @@ class ImCart {
 
         // Check if the current order number already exists
         do {
-            $res = $this->db->query("SELECT id FROM `" . $this->table_prefix . $this->settings['orders_table'] . "` WHERE id='" . $this->db->escapeString($this->orderData['orderNo']) ."'");
+            $res = $this->db->select(array(
+                'select' => 'id',
+                'from' => $this->table_prefix . $this->settings['orders_table'],
+                'where' => array('id' => $this->orderData['orderNo'])
+            ));
             if (count($res)) {
                 $this->orderData['orderNo'] .= rand(0, 9);
             }
         } while (count($res));
 
         // Save the order data
-        $this->db->query(
-            "INSERT INTO `" . $this->table_prefix . $this->settings['orders_table'] . "` "
-            . "(
-                `id`,
-                `ts`,
-                `ip`,
-                `vat_type`,
-                `price`,
-                `vat`,
-                `price_plus_vat`,
-                `currency`,
-                `shipping_name`,
-                `shipping_icon`,
-                `shipping_price`,
-                `shipping_vat`,
-                `shipping_price_plus_vat`,
-                `payment_name`,
-                `payment_icon`,
-                `payment_price`,
-                `payment_vat`,
-                `payment_price_plus_vat`,
-                `coupon`,
-                `coupon_value`,
-                `availability_reduction_type`,
-                `contains_digital_products`
-            ) VALUES("
-            . "'" . $this->db->escapeString($this->orderData['orderNo']) . "',
-            '" . date("Y-m-d H:i:s") . "',
-            '" . $_SERVER['REMOTE_ADDR'] . "',
-            '" . $this->settings['vat_type'] . "',
-            " . $this->orderData['rawTotalPrice'] . ",
-            " . $this->orderData['rawTotalVat'] . ",
-            " . $this->orderData['rawTotalPricePlusVat'] . ",
-            '" . $this->orderData['currency'] . "',
-            '" . (isset($this->orderData['shipping']) ? $this->db->escapeString($this->orderData['shipping']['name']) : ''). "',
-            '" . (isset($this->orderData['shipping']) ? $this->db->escapeString($this->orderData['shipping']['icon']) : ''). "',
-            " . (isset($this->orderData['shipping']) ? $this->orderData['shipping']['rawPrice'] : 0) . ",
-            " . (isset($this->orderData['shipping']) ? $this->orderData['shipping']['rawVat'] : 0) . ",
-            " . (isset($this->orderData['shipping']) ? $this->orderData['shipping']['rawPricePlusVat'] : 0) . ",
-            '" . (isset($this->orderData['payment']) ? $this->db->escapeString($this->orderData['payment']['name']) : '') . "',
-            '" . (isset($this->orderData['payment']) ? $this->db->escapeString($this->orderData['payment']['icon']) : '') . "',
-            " . (isset($this->orderData['payment']) ? $this->orderData['payment']['rawPrice'] : 0) . ",
-            " . (isset($this->orderData['payment']) ? $this->orderData['payment']['rawVat'] : 0). ",
-            " . (isset($this->orderData['payment']) ? $this->orderData['payment']['rawPricePlusVat'] : 0) . ",
-            '" . (isset($this->orderData['coupon']) ? $this->db->escapeString($this->orderData['coupon']) : '') . "',
-            '" . (isset($this->orderData['rawCouponDiscount']) ? $this->orderData['rawCouponDiscount'] : 0) . "',
-            " . $this->settings['availability_reduction_type'] . ",
-            0
-            )"
-        );
+        $this->db->insert(array(
+            'into' => $this->table_prefix . $this->settings['orders_table'],
+            'values' => array(
+                'id' => $this->orderData['orderNo'],
+                'ts' => date("Y-m-d H:i:s"),
+                'ip' => $_SERVER['REMOTE_ADDR'],
+                'vat_type' => $this->settings['vat_type'],
+                'price' => $this->orderData['rawTotalPrice'],
+                'vat' => $this->orderData['rawTotalVat'],
+                'price_plus_vat' => $this->orderData['rawTotalPricePlusVat'],
+                'currency' => $this->orderData['currency'],
+                'shipping_name' => (isset($this->orderData['shipping']) ? $this->orderData['shipping']['name'] : ''),
+                'shipping_icon' => (isset($this->orderData['shipping']) ? $this->orderData['shipping']['icon'] : ''),
+                'shipping_price' => (isset($this->orderData['shipping']) ? $this->orderData['shipping']['rawPrice'] : 0),
+                'shipping_vat' => (isset($this->orderData['shipping']) ? $this->orderData['shipping']['rawVat'] : 0),
+                'shipping_price_plus_vat' => (isset($this->orderData['shipping']) ? $this->orderData['shipping']['rawPricePlusVat'] : 0),
+                'payment_name' => (isset($this->orderData['payment']) ? $this->orderData['payment']['name'] : ''),
+                'payment_icon' => (isset($this->orderData['payment']) ? $this->orderData['payment']['icon'] : ''),
+                'payment_price' => (isset($this->orderData['payment']) ? $this->orderData['payment']['rawPrice'] : 0),
+                'payment_vat' => (isset($this->orderData['payment']) ? $this->orderData['payment']['rawVat'] : 0),
+                'payment_price_plus_vat' => (isset($this->orderData['payment']) ? $this->orderData['payment']['rawPricePlusVat'] : 0),
+                'coupon' => (isset($this->orderData['coupon']) ? $this->orderData['coupon'] : ''),
+                'coupon_value' => (isset($this->orderData['rawCouponDiscount']) ? $this->orderData['rawCouponDiscount'] : 0),
+                'availability_reduction_type' => $this->settings['availability_reduction_type'],
+                'contains_digital_products' => 0
+            )
+        ));
 
         // Save the products
         $isDigitalOrder = false;
-        if (isset($this->orderData['products']) && is_array($this->orderData['products'])) {
-            $qdata = array();
-            $query = "INSERT INTO `" . $this->table_prefix . $this->settings['products_table']. "` (
-                    `order_id`,
-                    `product_id`,
-                    `option`,
-                    `suboption`,
-                    `price`,
-                    `vat`,
-                    `price_plus_vat`,
-                    `quantity`,
-                    `name`,
-                    `physical`,
-                    `digital`,
-                    `download_hash`,
-                    `download_link`,
-                    `download_end_ts`
-                ) VALUES";
+        if (isset($this->orderData['products']) && is_array($this->orderData['products'])) {           
             foreach ($this->orderData['products'] as $key => $product) {
                 // Check if this product is a digital download
                 $downloadHash = "";
                 $downloadLink = "";
-                $downloadEndTs = "null";
+                $downloadEndTs = null;
                 $digital = false;
                 if (isset($this->digitalProducts[$product['id']])) {
                     $imSettings = Configuration::getSettings();
                     $downloadHash = sha1($this->orderData['orderNo'] . $product['id'] . @$imSettings['general']['salt']);
                     $downloadLink = $this->digitalProducts[$product['id']]["link"];
                     if ($this->digitalProducts[$product['id']]['temporary']) {
-                        $downloadEndTs =  "'" . date("Y-m-d H:i:s", strtotime("+" . $this->digitalProducts[$product['id']]['days'] . " day")) . "'";
+                        $downloadEndTs =  date("Y-m-d H:i:s", strtotime("+" . $this->digitalProducts[$product['id']]['days'] . " day"));
                     }
                     $digital = true;
                     $isDigitalOrder = true;
                 }
-                $qdata[] = "(
-                    '" . $this->db->escapeString($this->orderData['orderNo']) . "',
-                    '" . $this->db->escapeString($product['id']) . "',
-                    '" . $this->db->escapeString(isset($product['option']) ? $product['option'] : '') . "',
-                    '" . $this->db->escapeString(isset($product['suboption']) ? $product['suboption'] : '') . "',
-                    " . $product['rawPrice'] . ",
-                    " . $product['rawVat'] . ",
-                    " . $product['rawPricePlusVat'] . ",
-                    " . $product['quantity'] . ",
-                    '" . $this->db->escapeString($product['name']) . "',
-                    '" . ($digital ? 0 : 1) . "',
-                    '" . ($digital ? 1 : 0) . "',
-                    '" . $this->db->escapeString($downloadHash) . "',
-                    '" . $this->db->escapeString($downloadLink) . "',
-                    " . $downloadEndTs . "
-                )";
+                $this->db->insert(array(
+                    'into' => $this->table_prefix . $this->settings['products_table'],
+                    'values' => array(
+                        'order_id' => $this->orderData['orderNo'],
+                        'product_id' => $product['id'],
+                        'option' => (isset($product['option']) ? $product['option'] : ''),
+                        'suboption' => (isset($product['suboption']) ? $product['suboption'] : ''),
+                        'price' => $product['rawPrice'],
+                        'vat' => $product['rawVat'],
+                        'price_plus_vat' => $product['rawPricePlusVat'],
+                        'quantity' => $product['quantity'],
+                        'name' => $product['name'],
+                        'physical' => ($digital ? 0 : 1),
+                        'digital' => ($digital ? 1 : 0),
+                        'download_hash' => $downloadHash,
+                        'download_link' => $downloadLink,
+                        'download_end_ts' => $downloadEndTs
+                    )
+                ));
             }
-            $query .= implode(",", $qdata);
-            $this->db->query($query);
         }
 
         // Update the order record if necessary
         if ($isDigitalOrder) {
-            $this->db->query("UPDATE `" . $this->table_prefix . $this->settings['orders_table'] . "`
-                              SET `contains_digital_products`=1
-                              WHERE `id`='" . $this->db->escapeString($this->orderData['orderNo']) . "'");
+            $this->db->update(array(
+                'update' => $this->table_prefix . $this->settings['orders_table'],
+                'set' => array('contains_digital_products' => 1),
+                'where' => array('id', $this->orderData['orderNo'])
+            ));
         }
 
         // Save the invoice data
         if (isset($this->orderData['userInvoiceData']) && is_array($this->orderData['userInvoiceData'])) {
-            $qdata = array();
             $index = 0;
             $orderAttachments = array();
-            $query = "INSERT INTO `" . $this->table_prefix . $this->settings['invoice_addresses_table'] . "` (
-                `order_id`,
-                `field_id`,
-                `label`,
-                `index`,
-                `value`
-            ) VALUES";
             foreach ($this->orderData['userInvoiceData'] as $key => $field) {
                 if ($field['value'] != "") {
                     // If the field's ID is "Attachment", skip this field here and save the attachment info for later
@@ -2878,63 +2868,52 @@ class ImCart {
                         $orderAttachments[] = array("OriginalFileName" => $originalFileName, "ServerFileName" => $serverFileName);
                     }
                     else {
-                        $qdata[] = "(
-                            '" . $this->db->escapeString($this->orderData['orderNo']) . "',
-                            '" . $this->db->escapeString($key) . "',
-                            '" . $this->db->escapeString($field['label']) . "',
-                            '" . $index++ . "',
-                            '" . $this->db->escapeString($field['value']) . "'
-                        )";
+                        $this->db->insert(array(
+                            'into' => $this->table_prefix . $this->settings['invoice_addresses_table'],
+                            'values' => array(
+                                'order_id' => $this->orderData['orderNo'],
+                                'field_id' => $key,
+                                'label' => $field['label'],
+                                'index' => ($index++),
+                                'value' => $field['value']
+                            )
+                        ));
                     }
                 }
             }
-            $query .= implode(",", $qdata);
-            $this->db->query($query);
         }
 
         // Save the shipping data
         if (isset($this->orderData['userShippingData']) && is_array($this->orderData['userShippingData'])) {
-            $qdata = array();
             $index = 0;
-            $query = "INSERT INTO `" . $this->table_prefix . $this->settings['shipping_addresses_table'] . "` (
-                `order_id`,
-                `field_id`,
-                `label`,
-                `index`,
-                `value`
-            ) VALUES";
             foreach ($this->orderData['userShippingData'] as $key => $field) {
                 if ($field['value'] != "") {
-                    $qdata[] = "(
-                        '" . $this->db->escapeString($this->orderData['orderNo']) . "',
-                        '" . $this->db->escapeString($key) . "',
-                        '" . $this->db->escapeString($field['label']) . "',
-                        '" . $index++ . "',
-                        '" . $this->db->escapeString($field['value']) . "'
-                    )";
+                    $this->db->insert(array(
+                        'into' => $this->table_prefix . $this->settings['shipping_addresses_table'] ,
+                        'values' => array(
+                            'order_id' => $this->orderData['orderNo'],
+                            'field_id' => $key,
+                            'label' => $field['label'],
+                            'index' => ($index++),
+                            'value' => $field['value']
+                        )
+                    ));
                 }
             }
-            $query .= implode(",", $qdata);
-            $this->db->query($query);
         }
 
         // Save the attachments (if there are some)
         if (isset($orderAttachments) && is_array($orderAttachments) && count($orderAttachments) > 0) {
-            $qdata = array();
-            $query = "INSERT INTO `" . $this->table_prefix . $this->settings['attachments_table'] . "` (
-                `order_id`,
-                `original_file_name`,
-                `server_file_name`
-            ) VALUES";
             foreach ($orderAttachments as $attachment) {
-                $qdata[] = "(
-                        '" . $this->db->escapeString($this->orderData['orderNo']) . "',
-                        '" . $this->db->escapeString($attachment['OriginalFileName']) . "',
-                        '" . $this->db->escapeString($attachment['ServerFileName']) . "'
-                    )";
+                $this->db->insert(array(
+                    'into' => $this->table_prefix . $this->settings['attachments_table'],
+                    'values' => array(
+                        'order_id' => $this->orderData['orderNo'],
+                        'original_file_name' => $attachment['OriginalFileName'],
+                        'server_file_name' => $attachment['ServerFileName']
+                    )
+                ));
             }
-            $query .= implode(",", $qdata);
-            $this->db->query($query);
         }
 
         // If the dynamic products availability reduction must be done now, search for dynamic products
@@ -2965,10 +2944,16 @@ class ImCart {
             return;
         }
         $id = $this->db->escapeString($id);
-        $order = $this->db->query("SELECT * FROM `" . $this->table_prefix . $this->settings['orders_table'] . "` WHERE `id`='" . $id . "'");
+        $order = $this->db->select(array(
+            'from' => $this->table_prefix . $this->settings['orders_table'],
+            'where' => array('id' => $id)
+        ));
         // If the order is not evaded and not int waiting and the quantity was not reduced, restore it!
         if ($order && count($order) && $order[0]['status'] != 'waiting' && $order[0]['availability_reduction_type'] == 1) {
-            $products = $this->db->query("SELECT * FROM `" . $this->table_prefix . $this->settings['products_table'] . "` WHERE order_id='" . $id . "'");
+            $products = $this->db->select(array(
+                'from' => $this->table_prefix . $this->settings['products_table'],
+                'where' => array('order_id' => $id)
+            ));
             for ($i = 0; $products && $i < count($products); $i++) {
                 if ($this->isDynamicProduct($products[$i]['product_id'])) {
                     $this->addDynamicProductItems($products[$i]['product_id'], $products[$i]['quantity']);
@@ -2976,10 +2961,10 @@ class ImCart {
             }
         }
         // Now delete all the data about this order
-        $this->db->query("DELETE FROM `" . $this->table_prefix . $this->settings['orders_table'] . "` WHERE `id`='" . $id . "'" );
-        $this->db->query("DELETE FROM `" . $this->table_prefix . $this->settings['invoice_addresses_table'] . "` WHERE `order_id`='" . $id . "'" );
-        $this->db->query("DELETE FROM `" . $this->table_prefix . $this->settings['shipping_addresses_table'] . "` WHERE `order_id`='" . $id . "'" );
-        $this->db->query("DELETE FROM `" . $this->table_prefix . $this->settings['products_table'] . "` WHERE `order_id`='" . $id . "'" );
+        $this->db->delete(array('from' => $this->table_prefix . $this->settings['orders_table'], 'where' => array('id' => $id)));
+        $this->db->delete(array('from' => $this->table_prefix . $this->settings['invoice_addresses_table'], 'where' => array('order_id' => $id)));
+        $this->db->delete(array('from' => $this->table_prefix . $this->settings['shipping_addresses_table'], 'where' => array('order_id' => $id)));
+        $this->db->delete(array('from' => $this->table_prefix . $this->settings['products_table'], 'where' => array('order_id' => $id)));
     }
 
     /**
@@ -3005,23 +2990,28 @@ class ImCart {
         $ids = array();
         if (strlen($filter)) {
             // Search in the customer's data
-            $query = "SELECT order_id FROM `" . $this->table_prefix . $this->settings['invoice_addresses_table'] . "`" .
-            " WHERE value LIKE '%" . $this->db->escapeString($filter) . "%'";
+            $where = array();
             // If the filter is an email, target the email field only
             if (strpos("@", $filter) !== false) {
-                $query .= " AND `field_id`='email'";
+                $where['field_id'] = 'Email';
             }
-            $results = $this->db->query($query);
+            $results = $this->db->select(array(
+                'select' => 'order_id',
+                'from' => $this->table_prefix . $this->settings['invoice_addresses_table'],
+                'where' => $where,
+                'where_flat' => array('value LIKE \'%' . $this->db->escapeString($filter) . '%\'')
+            ));
             if ($results) {
                 foreach ($results as $order) {
                     $ids[] = $order['order_id'];
                 }
             }
             // Search in the orders's data
-            $results = $this->db->query(
-                "SELECT id FROM `" . $this->table_prefix . $this->settings['orders_table'] . "`" .
-                " WHERE `id` LIKE '%" . $this->db->escapeString($filter) . "%'"
-            );
+            $results = $this->db->select(array(
+                'select' => 'id',
+                'from' => $this->table_prefix . $this->settings['orders_table'],
+                'where_flat' => array('`id` LIKE \'%' . $this->db->escapeString($filter) . '%\'')
+            ));
             if ($results) {
                 foreach ($results as $order) {
                     $ids[] = $order['id'];
@@ -3029,34 +3019,47 @@ class ImCart {
             }
             $ids = array_unique($ids);
             if (count($ids) > 0) {
-                $results = $this->db->query(
-                    "SELECT * FROM `" . $this->table_prefix . $this->settings['orders_table'] .
-                    "` WHERE id IN ('" . implode("','", $ids) . "') " .
-                    ($status != "" ? "AND `status`='" . $this->db->escapeString($status) . "' " : "") .
-                    "ORDER BY `ts` DESC LIMIT " . $pagination_start . ", " . $pagination_length
+                $select = array(
+                    'from' => $this->table_prefix . $this->settings['orders_table'],
+                    'order_by' => array('ts' => 'desc'),
+                    'where' => array('id' => $ids),
+                    'limit' => array($pagination_start, $pagination_length)
                 );
+                if ($status != '') {
+                    $select['where']['status'] = $status;
+                }
+                $results = $this->db->select($select);
                 if (!is_bool($results)) {
                     $result['orders'] = $results;
                     // Set the pagination maximum length
-                    $ordersCount = $this->db->query("SELECT COUNT(*) AS c
-                                                    FROM `" . $this->table_prefix . $this->settings['orders_table'] . "`
-                                                    WHERE id IN ('" . implode("','", $ids) . "')" .
-                                                    ($status != "" ? " AND `status`='" . $this->db->escapeString($status) . "' " : ""));
+                    $query = array(
+                        'select' => array('fn' => 'count', 'as' => 'c'),
+                        'from' => $select['from'],
+                        'where' => $select['where'],
+                    );
+                    $ordersCount = $this->db->select($query);
                     $result['paginationCount'] = $ordersCount[0]['c'];
                 }
             }
         } else {
-            $results = $this->db->query(
-                "SELECT * FROM `" . $this->table_prefix . $this->settings['orders_table'] . "` " .
-                ($status != "" ? "WHERE `status`='" . $this->db->escapeString($status) . "' " : "") .
-                "ORDER BY `ts` DESC LIMIT " . $pagination_start . ", " . $pagination_length
+            $select = array(
+                'from' => $this->table_prefix . $this->settings['orders_table'],
+                'order_by' => array('ts' => 'desc'),
+                'limit' => array($pagination_start, $pagination_length)
             );
-            if (!is_bool($results)) {
+            if ($status != '') {
+                $select['where']['status'] = $status;
+            }
+            $results = $this->db->select($select);
+            if (is_array($results) && count($results)) {
                 $result['orders'] = $results;
                 // Set the pagination maximum length
-                $ordersCount = $this->db->query("SELECT COUNT(*) AS c
-                                                FROM `" . $this->table_prefix . $this->settings['orders_table'] . "`" .
-                                                ($status != "" ? " WHERE `status`='" . $this->db->escapeString($status) . "' " : ""));
+                $query = array(
+                    'select' => array('fn' => 'count', 'as' => 'c'),
+                    'from' => $select['from'],
+                    'where' => $select['where'],
+                );
+                $ordersCount = $this->db->select($query);
                 $result['paginationCount'] = $ordersCount[0]['c'];
                 for ($i=0; $i < count($results); $i++) {
                     $ids[] = $results[$i]['id'];
@@ -3064,20 +3067,26 @@ class ImCart {
             }
         }
         // Populate the orders with the invoice addresses
-        $fields = array();
-        $fieldresults = $this->db->query("SELECT * FROM `" . $this->table_prefix . $this->settings['invoice_addresses_table'] . "` WHERE `order_id` IN ('" . implode("','", $ids) . "') ORDER BY `order_id`, `index`");
-        for ($i = 0; $i < count($fieldresults); $i++) {
-            if (!isset($fields[$fieldresults[$i]['order_id']])) {
-                $fields[$fieldresults[$i]['order_id']] = array();
+        if (count($ids)) {
+            $fields = array();
+            $fieldresults = $this->db->select(array(
+                'from' => $this->table_prefix . $this->settings['invoice_addresses_table'],
+                'where' => array('order_id' => $ids),
+                'order_by' => array('order_id', 'index')
+            ));
+            for ($i = 0; $i < count($fieldresults); $i++) {
+                if (!isset($fields[$fieldresults[$i]['order_id']])) {
+                    $fields[$fieldresults[$i]['order_id']] = array();
+                }
+                $fields[$fieldresults[$i]['order_id']][] = $fieldresults[$i];
             }
-            $fields[$fieldresults[$i]['order_id']][] = $fieldresults[$i];
-        }
-        for ($i=0; $i < count($result['orders']); $i++) {
-            $result['orders'][$i]['invoice'] = array();
-            foreach ($fields as $key => $value) {
-                if ($key == $result['orders'][$i]['id']) {
-                    $result['orders'][$i]['invoice'] = $value;
-                    break;
+            for ($i = 0; $i < count($result['orders']); $i++) {
+                $result['orders'][$i]['invoice'] = array();
+                foreach ($fields as $key => $value) {
+                    if ($key == $result['orders'][$i]['id']) {
+                        $result['orders'][$i]['invoice'] = $value;
+                        break;
+                    }
                 }
             }
         }
@@ -3096,8 +3105,11 @@ class ImCart {
         if (!$this->db) {
             return 0;
         }
-        $results = $this->db->query("SELECT COUNT(*) AS `count` FROM `" . $this->table_prefix . $this->settings['invoice_addresses_table'] . "`
-                    WHERE `field_id` = 'email' AND `value`='" . $this->db->escapeString($email) . "'");
+        $results = $this->db->select(array(
+            'select' => array('fn' => 'count', 'as' => 'count'),
+            'from' => $this->table_prefix . $this->settings['invoice_addresses_table'],
+            'where' => array('field_id' => 'Email', 'value' => $email)
+        ));
         if ($results) {
             return $results[0]['count'];
         }
@@ -3115,21 +3127,23 @@ class ImCart {
      */
     public function getOrdersCountByStatus($status = "", $from = "", $to = "")
     {
-        $query = "SELECT COUNT(*) AS `count` FROM `" . $this->table_prefix . $this->settings['orders_table'] . "`";
-        $conditions = array();
+        $where = array();
+        $where_flat = array();
         if (strlen($status)) {
-            $conditions[] = "`status`='" . $this->db->escapeString($status) . "'";
+            $where['status'] = $status;
         }
         if (strlen($from)) {
-            $conditions[] = "`ts` >= '" . $this->db->escapeString($from) . "'";
+            $where_flat[] = "`ts` >= '" . $this->db->escapeString($from) . "'";
         }
         if (strlen($to)) {
-            $conditions[] = "`ts` <= '" . $this->db->escapeString($to) . "'";
+            $where_flat[] = "`ts` <= '" . $this->db->escapeString($to) . "'";
         }
-        if (count($conditions)) {
-            $query .= " WHERE " . join(" AND ", $conditions);
-        }
-        $results = $this->db->query($query);
+        $results = $this->db->select(array(
+            'select' => array('fn' => 'count', 'as' => 'count'),
+            'from' => $this->table_prefix . $this->settings['orders_table'],
+            'where' => $where,
+            'where_flat' => $where_flat
+        ));
         return $results[0]['count'];
     }
 
@@ -3157,11 +3171,18 @@ class ImCart {
         if (!$this->db) {
             return $data;
         }
-        $query = "SELECT COUNT(*) AS `count`, DATE(`ts`) AS `date`  FROM `" . $this->table_prefix . $this->settings['orders_table'] . "`" .
-                " WHERE `ts` >= '" . $this->db->escapeString($from) . "'" .
-                " AND `ts` <= '" . $this->db->escapeString($to) . "'" .
-                " GROUP BY DATE(`ts`)";
-        $results = $this->db->query($query);
+        $results = $this->db->select(array(
+            'select' => array(
+                array('fn' => 'count', 'as' => 'count'),
+                array('fn' => 'date', 'column' => 'ts', 'as' => 'date')
+            ),
+            'from' => $this->table_prefix . $this->settings['orders_table'],
+            'where_flat' => array(
+                '`ts` >= \'' . $this->db->escapeString($from) . '\'',
+                '`ts` <= \'' . $this->db->escapeString($to) . '\''
+            ),
+            'group_by' => 'date'
+        ));
 
         if (!$results) {
             return $data;
@@ -3183,13 +3204,14 @@ class ImCart {
     public function getOrder($id)
     {
         $result = array();
-        $order = $this->db->query("SELECT * FROM `" . $this->table_prefix . $this->settings['orders_table'] . "` WHERE id='" . $this->db->escapeString($id) . "'");
+        $order = $this->db->select(array('from' => $this->table_prefix . $this->settings['orders_table'], 'where' => array('id' => $id)));
         if (count($order)) {
+            $where = array('order_id' => $id);
             $result['order'] = $order[0];
-            $result['products'] = $this->db->query("SELECT * FROM `" . $this->table_prefix . $this->settings['products_table'] . "` WHERE order_id='" . $this->db->escapeString($id) . "'");
-            $result['invoice']= $this->db->query("SELECT * FROM `" . $this->table_prefix . $this->settings['invoice_addresses_table'] . "` WHERE order_id='" . $this->db->escapeString($id) . "' ORDER BY `index`");
-            $result['shipping'] = $this->db->query("SELECT * FROM `" . $this->table_prefix . $this->settings['shipping_addresses_table'] . "` WHERE order_id='" . $this->db->escapeString($id) . "' ORDER BY `index`");
-            $result['attachments'] = $this->db->query("SELECT * FROM `" . $this->table_prefix . $this->settings['attachments_table'] . "` WHERE order_id='" . $this->db->escapeString($id) . "'");
+            $result['products'] = $this->db->select(array('from' => $this->table_prefix . $this->settings['products_table'], 'where' => $where));
+            $result['invoice'] = $this->db->select(array('from' => $this->table_prefix . $this->settings['invoice_addresses_table'], 'where' => $where, 'order_by' => 'index'));
+            $result['shipping'] = $this->db->select(array('from' => $this->table_prefix . $this->settings['shipping_addresses_table'], 'where' => $where, 'order_by' => 'index'));
+            $result['attachments'] = $this->db->select(array('from' => $this->table_prefix . $this->settings['attachments_table'], 'where' => $where));
         }
         return $result;
     }
@@ -3313,8 +3335,13 @@ class ImCart {
     {
         $attachment = array('server_file_name' => '', 'original_file_name' => '');
         if ($this->db) {
-            $table = $this->table_prefix . $this->settings['attachments_table'];
-            $result = $this->db->query("SELECT * FROM `" . $table . "` WHERE `order_id`='" . $this->db->escapeString($idOrder) . "' AND `id`='" . $this->db->escapeString($idAttachment) . "'");
+            $result = $this->db->select(array(
+                'from' => $this->table_prefix . $this->settings['attachments_table'],
+                'where' => array(
+                    'id' => $idAttachment,
+                    'order_id' => $idOrder
+                )
+            ));
             if ($result && count($result) > 0) {
                 $attachment['server_file_name'] = $result[0]['server_file_name'];
                 $attachment['original_file_name'] = $result[0]['original_file_name'];
@@ -3339,16 +3366,16 @@ class ImCart {
             $includeDigital = $includePhysical = true;
         }
         if ($this->db) {
-            $ptable = $this->table_prefix . $this->settings['products_table'];
-            $otable = $this->table_prefix . $this->settings['orders_table'];
+            $ptable = $this->db->table($this->table_prefix . $this->settings['products_table']);
+            $otable = $this->db->table($this->table_prefix . $this->settings['orders_table']);
             $query = $this->db->query("SELECT `o`.`id` AS `order_id`,
                                               YEAR(`o`.`ts`) AS `year`,
                                               MONTH(`o`.`ts`) AS `month`,
                                               `o`.`shipping_price_plus_vat` AS `shipping_price`,
                                               `o`.`payment_price_plus_vat` AS `payment_price`,
                                               SUM(`p`.`price_plus_vat`) AS `products_amount`
-                                       FROM `" . $otable . "` AS `o`
-                                       INNER JOIN `" . $ptable . "` AS `p`
+                                       FROM " . $otable . " AS `o`
+                                       INNER JOIN " . $ptable . " AS `p`
                                        ON `o`.`id`=`p`.`order_id`
                                        WHERE `o`.`status`='evaded'
                                        AND (" .
@@ -3400,16 +3427,16 @@ class ImCart {
             $includeDigital = $includePhysical = true;
         }
         if ($this->db) {
-            $ptable = $this->table_prefix . $this->settings['products_table'];
-            $otable = $this->table_prefix . $this->settings['orders_table'];
+            $ptable = $this->db->table($this->table_prefix . $this->settings['products_table']);
+            $otable = $this->db->table($this->table_prefix . $this->settings['orders_table']);
             $query = $this->db->query("SELECT `o`.`id` AS `order_id`,
                                               YEAR(`o`.`ts`) AS `year`,
                                               MONTH(`o`.`ts`) AS `month`,
                                               `o`.`shipping_price_plus_vat` AS `shipping_price`,
                                               `o`.`payment_price_plus_vat` AS `payment_price`,
                                               SUM(`p`.`price_plus_vat`) AS `products_amount`
-                                       FROM `" . $otable . "` AS `o`
-                                       INNER JOIN `" . $ptable . "` AS `p`
+                                       FROM " . $otable . " AS `o`
+                                       INNER JOIN " . $ptable . " AS `p`
                                        ON `o`.`id`=`p`.`order_id`
                                        WHERE `o`.`status`='evaded'
                                        AND (" .
@@ -3465,10 +3492,10 @@ class ImCart {
             $includeDigital = $includePhysical = true;
         }
         if ($this->db) {
-            $ptable = $this->table_prefix . $this->settings['products_table'];
-            $otable = $this->table_prefix . $this->settings['orders_table'];
+            $ptable = $this->db->table($this->table_prefix . $this->settings['products_table']);
+            $otable = $this->db->table($this->table_prefix . $this->settings['orders_table']);
             $query = $this->db->query("SELECT `name`, SUM(`quantity`) as `count`
-                                        FROM `" . $ptable . "` AS p JOIN `" . $otable . "` AS o
+                                        FROM " . $ptable . " AS p JOIN " . $otable . " AS o
                                         ON p.order_id=o.id
                                         WHERE o.status='evaded'
                                         AND (" .
@@ -3627,15 +3654,26 @@ class ImCart {
     public function moveOrderToInbox($id)
     {
         // Check the order status
-        $result = $this->db->query("SELECT `status`, `availability_reduction_type` FROM `" . $this->table_prefix . $this->settings['orders_table'] . "` WHERE id='" . $this->db->escapeString($id) . "'");
+        $result = $this->db->select(array(
+            'select' => array('status', 'availability_reduction_type'),
+            'from' => $this->table_prefix . $this->settings['orders_table'],
+            'where' => array('id' => $id)
+        ));
         if (!$result || !count($result) || $result[0]['status'] != "waiting") { // You can move to the inbox only the waiting orders
             return;
         }
         // Update the order status
-        $this->db->query("UPDATE `" . $this->table_prefix . $this->settings['orders_table'] . "` SET `status`='inbox', `ts`=`ts` WHERE `id`='" . $this->db->escapeString($id) . "'");
+        $this->db->update(array(
+            'update' => $this->table_prefix . $this->settings['orders_table'],
+            'set' => array('status' => 'inbox'),
+            'where' => array('id' => $id)
+        ));
         // If the availability reduction type is immediate, update the products quantity
         if ($result[0]['availability_reduction_type'] == 1) {
-            $products = $this->db->query("SELECT * FROM `" . $this->table_prefix . $this->settings['products_table'] . "` WHERE `order_id`='" . $this->db->escapeString($id) . "'");
+            $products = $this->db->select(array(
+                'from' => $this->table_prefix . $this->settings['products_table'],
+                'where' => array('order_id' => $id)
+            ));
             if (!$products || !count($products)) {
                 return;
             }
@@ -3657,15 +3695,26 @@ class ImCart {
     public function moveOrderToWaiting($id)
     {
         // Check the order status
-        $result = $this->db->query("SELECT `status`, `availability_reduction_type` FROM `" . $this->table_prefix . $this->settings['orders_table'] . "` WHERE id='" . $this->db->escapeString($id) . "'");
+        $result = $this->db->select(array(
+            'select' => array('status', 'availability_reduction_type'),
+            'from' => $this->table_prefix . $this->settings['orders_table'],
+            'where' => array('id' => $id)
+        )); 
         if (!$result || !count($result) || $result[0]['status'] != "inbox") { // You can put to wait only inbox orders
             return;
         }
         // Update the order status
-        $this->db->query("UPDATE `" . $this->table_prefix . $this->settings['orders_table'] . "` SET `status`='waiting', `ts`=`ts` WHERE `id`='" . $this->db->escapeString($id) . "'");
+        $this->db->update(array(
+            'update' => $this->table_prefix . $this->settings['orders_table'],
+            'set' => array('status' => 'waiting'),
+            'where' => array('id' => $id)
+        ));
         // If the availability reduction type is immediate, update the products quantity
         if ($result[0]['availability_reduction_type'] == 1) {
-            $products = $this->db->query("SELECT * FROM `" . $this->table_prefix . $this->settings['products_table'] . "` WHERE `order_id`='" . $this->db->escapeString($id) . "'");
+            $products = $this->db->select(array(
+                'from' => $this->table_prefix . $this->settings['products_table'],
+                'where' => array('order_id' => $id)
+            ));
             if (!$products || !count($products)) {
                 return;
             }
@@ -3693,18 +3742,29 @@ class ImCart {
     public function evadeOrder($id, $payment_data = '')
     {
         // Check the order status
-        $result = $this->db->query("SELECT `status`, `availability_reduction_type` FROM `" . $this->table_prefix . $this->settings['orders_table'] . "` WHERE id='" . $this->db->escapeString($id) . "'");
+        $result = $this->db->select(array(
+            'select' => array('status', 'availability_reduction_type'),
+            'from' => $this->table_prefix . $this->settings['orders_table'],
+            'where' => array('id' => $id)
+        )); 
         if (!$result || !count($result) || $result[0]['status'] != "inbox") { // Allow only inbox orders to be evaded
             return;
         }
         // Update the order status
-        $this->db->query("UPDATE `" . $this->table_prefix . $this->settings['orders_table'] . "` SET `status`='evaded', `payment_data`='" . $this->db->escapeString($payment_data) . "', `ts`=`ts` WHERE `id`='" . $this->db->escapeString($id) . "'");
+        $this->db->update(array(
+            'update' => $this->table_prefix . $this->settings['orders_table'],
+            'set' => array('status' => 'evaded', 'payment_data' => $payment_data),
+            'where' => array('id' => $id)
+        ));
         // Send the emails
         $this->sendPhysicalDeliveryEmail($id);
         $this->sendDigitalDeliveryEmail($id);
         // If the availability reduction type is postponed, update the products quantity
         if ($result[0]['availability_reduction_type'] == 2) {
-            $products = $this->db->query("SELECT * FROM `" . $this->table_prefix . $this->settings['products_table'] . "` WHERE `order_id`='" . $this->db->escapeString($id) . "'");
+            $products = $this->db->select(array(
+                'from' => $this->table_prefix . $this->settings['products_table'],
+                'where' => array('order_id' => $id)
+            ));
             if (!$products || !count($products)) {
                 return;
             }
@@ -3726,15 +3786,26 @@ class ImCart {
     public function unevadeOrder($id)
     {
         // Check the order status
-        $result = $this->db->query("SELECT `status`, `availability_reduction_type` FROM `" . $this->table_prefix . $this->settings['orders_table'] . "` WHERE id='" . $this->db->escapeString($id) . "'");
+        $result = $this->db->select(array(
+            'select' => array('status', 'availability_reduction_type'),
+            'from' => $this->table_prefix . $this->settings['orders_table'],
+            'where' => array('id' => $id)
+        )); 
         if (!$result || !count($result) || $result[0]['status'] != "evaded") { // Allow only evaded orders to be unevaded
             return;
         }
         // Update the order status
-        $this->db->query("UPDATE `" . $this->table_prefix . $this->settings['orders_table'] . "` SET `status`='inbox', `ts`=`ts` WHERE `id`='" . $this->db->escapeString($id) . "'");
+        $this->db->update(array(
+            'update' => $this->table_prefix . $this->settings['orders_table'],
+            'set' => array('status' => 'inbox'),
+            'where' => array('id' => $id)
+        ));
         // If the availability reduction type is postponed, update the products quantity
         if ($result[0]['availability_reduction_type'] == 2) {
-            $products = $this->db->query("SELECT * FROM `" . $this->table_prefix . $this->settings['products_table'] . "` WHERE `order_id`='" . $this->db->escapeString($id) . "'");
+            $products = $this->db->select(array(
+                'from' => $this->table_prefix . $this->settings['products_table'],
+                'where' => array('order_id' => $id)
+            ));
             if (!$products || !count($products)) {
                 return;
             }
@@ -3762,8 +3833,7 @@ class ImCart {
     public function removeDynamicProduct($id)
     {
         if ($this->db) {
-            $table = $this->table_prefix . $this->settings['dynamicproducts_table'];
-            $this->db->query("DELETE FROM `" . $table . "` WHERE id='" . $this->db->escapeString($id) . "'");
+            $this->db->delete(array('from' => $this->table_prefix . $this->settings['dynamicproducts_table'], 'where' => array('id' => $id)));
         }
     }
 
@@ -3794,14 +3864,48 @@ class ImCart {
         }
 
         // Add the items to the table
-        $count = $this->db->query("SELECT * FROM `" . $table . "` WHERE `id`='" . $this->db->escapeString($id) . "'");
+        $count = $this->db->select(array(
+            'select' => 'quantity',
+            'from' => $table,
+            'where' => array('id' => $id)
+        ));
         if (count($count) > 0) {
-            $newQuantity = $count[0]['quantity'] + $quantity; // Make sure that the minimum quantity is always 0
-            $this->db->query("UPDATE `" . $table . "` SET `quantity`=" . ($newQuantity > 0 ? $newQuantity : 0) ." WHERE `id`='" . $this->db->escapeString($id) . "'");
+            $newQuantity = max(0, $count[0]['quantity'] + $quantity); // Make sure that the minimum quantity is always 0
+            $this->db->update(array(
+                'update' => $table,
+                'set' => array('quantity' => $newQuantity),
+                'where' => array('id' => $id)
+            ));
         } else {
             // Do not allow negative quantities at first
-            $this->db->query("INSERT INTO `" . $table . "` (id, quantity, warninglimit) VALUES ('" . $this->db->escapeString($id) . "', " . ($quantity > 0 ? $quantity : 0) . ", 0)");
+            $this->db->insert(array(
+                'into' => $table,
+                'values' => array(
+                    'id' => $id,
+                    'quantity' => max(0, $quantity),
+                    'warninglimit' => 0
+                )
+            ));
         }
+    }
+
+    public function get_products_dynamic_availability()
+    {
+        $data = array();
+        if ($this->db && $this->db->testConnection()) {
+            $rows = $this->db->select(array('from' => $this->table_prefix . $this->settings['dynamicproducts_table']));
+            if (is_array($rows) && count($rows)) {
+                foreach ($rows as $row) {
+                    $availability = $row['quantity'] <= 0 ? 'notavailable' : ($row['quantity'] < $row['warninglimit'] ? 'lacking' : 'available');
+                    $data[$row['id']] = array(
+                        'quantity' => $row['quantity'],
+                        'warning_limit' => $row['warninglimit'],
+                        'availability' => $availability
+                    );
+                }
+            }
+        }
+        return $data;
     }
 
     /**
@@ -3817,7 +3921,11 @@ class ImCart {
         if ($this->db) {
             $table = $this->table_prefix . $this->settings['dynamicproducts_table'];
             $limit *= 1;
-            $this->db->query("UPDATE `" . $table . "` SET `warninglimit`=" . $limit ." WHERE `id`='" . $this->db->escapeString($id) . "'");
+            $this->db->update(array(
+                'update' => $table,
+                'set' => array('warninglimit' => $limit),
+                'where' => array('id' => $id)
+            ));
         }
     }
 
@@ -3832,7 +3940,11 @@ class ImCart {
     {
         if ($this->db) {
             $table = $this->table_prefix . $this->settings['dynamicproducts_table'];
-            $result = $this->db->query("SELECT `quantity` FROM `" . $table . "` WHERE `id`='" . $this->db->escapeString($id) . "'");
+            $result = $this->db->select(array(
+                'select' => 'quantity',
+                'from' => $table,
+                'where' => array('id' => $id)
+            ));
             if ($result && count($result) > 0) {
                 return $result[0]['quantity'];
             }
@@ -3854,13 +3966,13 @@ class ImCart {
         if (!$this->db) {
             return $result;
         }
-        $query = "SELECT * FROM `" . $this->table_prefix . $this->settings['dynamicproducts_table'] . "`";
+        $select = array( 'from' => $this->table_prefix . $this->settings['dynamicproducts_table']);
         $pagination_start *= 1;
         $pagination_length *= 1;
         if ($pagination_length > 0) {
-            $query .= " LIMIT " . $pagination_start . "," . $pagination_length;
+            $select['limit'] = array($pagination_start, $pagination_length);
         }
-        $query = $this->db->query($query);
+        $query = $this->db->select($select);
         if (!$query) {
             return $result;
         }
@@ -3888,13 +4000,13 @@ class ImCart {
         if (!$this->db) {
             return $result;
         }
-        $query = "SELECT * FROM `" . $this->table_prefix . $this->settings['dynamicproducts_table'] . "` WHERE `quantity`<`warninglimit` || `quantity`=0";
+        $select = array('from'=> $this->table_prefix . $this->settings['dynamicproducts_table'], 'where_flat'=> '`quantity`<`warninglimit` || `quantity`=0');
         $pagination_start *= 1;
         $pagination_length *= 1;
         if ($pagination_length > 0) {
-            $query .= " LIMIT " . $pagination_start . "," . $pagination_length;
+            $select['limit'] = array($pagination_start, $pagination_length);
         }
-        $query = $this->db->query($query);
+        $query = $this->db->select($select);
         if (!$query) {
             return $result;
         }
@@ -3957,8 +4069,10 @@ class ImCart {
     public function getDynamicProductsCount()
     {
         if ($this->db) {
-            $result = $this->db->query("SELECT COUNT(id) AS `count` FROM `" . $this->table_prefix . $this->settings['dynamicproducts_table'] . "`");
-            return $result[0]['count'];
+            return $this->db->select(array(
+                'select' => array('fn'=>'count', 'as'=>'count'),
+                'from'=>$this->table_prefix . $this->settings['dynamicproducts_table']
+            ))[0]['count'];
         }
         return 0;
     }
@@ -3973,8 +4087,11 @@ class ImCart {
     public function isDynamicProduct($id)
     {
         if ($this->db) {
-            $table = $this->table_prefix . $this->settings['dynamicproducts_table'];
-            $result = $this->db->query("SELECT `id` FROM `" . $table . "` WHERE `id`='" . $this->db->escapeString($id) . "'");
+            $result = $this->db->select(array(
+                'select' => 'id',
+                'from' => $this->table_prefix . $this->settings['dynamicproducts_table'],
+                'where' => array('id' => $id)
+            ));
             return is_array($result) && count($result) > 0;
         }
         return false;
@@ -3990,8 +4107,11 @@ class ImCart {
     public function getDynamicProductAvailabilityLevel($id)
     {
         if ($this->db) {
-            $table = $this->table_prefix . $this->settings['dynamicproducts_table'];
-            $result = $this->db->query("SELECT `quantity`, `warninglimit` FROM `" . $table . "` WHERE `id`='" . $this->db->escapeString($id) . "'");
+            $result = $this->db->select(array(
+                'select' => array('quantity', 'warninglimit'),
+                'from' => $this->table_prefix . $this->settings['dynamicproducts_table'],
+                'where' => array('id' => $id)
+            ));
             if (count($result)) {
                 if ($result[0]['quantity'] > 0 && $result[0]['quantity'] >= $result[0]['warninglimit']) {
                     return "available";
@@ -4234,17 +4354,15 @@ class ImComment
      * 
      * @return {boolean} True if the comment was saved correctly
      */
-    function saveToDb($host, $user, $password, $db, $table, $postid)
+    function saveToDb($db, $table, $postid)
     {    
-        // TODO: Avoid collisions and simplify update/delete the changed rows instead of deleting and rebuilding the table
-        
-        $db = new ImDb($host, $user, $password, $db);
+        // TODO: Avoid collisions and simplify update/delete the changed rows instead of deleting and rebuilding the table        
         if (!$db->testConnection()) {
             return false;
         }
 
         // Delete the comments
-        $db->query("DELETE FROM `" . $table . "` WHERE postid='" . $db->escapeString($postid) . "'");
+        $db->delete(array('from' => $table, 'where' => array('postid' => $postid)));
 
         if (count($this->comments) === 0) {
             return true;
@@ -4268,28 +4386,34 @@ class ImComment
 
         // Resave them
         $i = 0;
+        $e = array();
         // WSXTWE-1222/1224/1283: Save only the fields that we care about, using the correct names
-        $query = "INSERT INTO `" . $table . "` (postid,commentid,email,name,url,body,ip,timestamp,abuse,approved,rating) VALUES ";
         foreach ($this->comments as $comment) {
-            $query .= "(
-                '" . $postid . "',
-                '" . $i++ . "',
-                '" . (isset($comment['email']) ? $db->escapeString($comment['email']) : "") . "',
-                '" . (isset($comment['name']) ? $db->escapeString($comment['name']) : "") . "',
-                '" . (isset($comment['url']) ? $db->escapeString($comment['url']) : "") . "',
-                '" . (isset($comment['body']) ? $db->escapeString($comment['body']) : "") . "',
-                '" . (isset($comment['ip']) ? $db->escapeString($comment['ip']) : "") . "',
-                '" . (isset($comment['timestamp']) ? $comment['timestamp'] : date("Y-m-d H:i:s")) . "',
-                '" . (isset($comment['abuse']) ? $db->escapeString($comment['abuse']) : "0") . "',
-                '" . (isset($comment['approved']) ? $db->escapeString($comment['approved']) : "1") . "',
-                '" . (isset($comment['rating']) ? $db->escapeString($comment['rating']) : "0") . "'),";
+            $r = $db->insert(array(
+                'into' => $table,
+                'values' => array(
+                    'postid' => $postid,
+                    'commentid' => $i++,
+                    'email' => (isset($comment['email']) ? $comment['email'] : ''),
+                    'name' => (isset($comment['name']) ? $comment['name'] : ''),
+                    'url' => (isset($comment['url']) ? $comment['url'] : ''),
+                    'body' => (isset($comment['body']) ? $comment['body'] : ''),
+                    'ip' => (isset($comment['ip']) ? $comment['ip'] : ''),
+                    'timestamp' => (isset($comment['timestamp']) ? $comment['timestamp'] : date("Y-m-d H:i:s")),
+                    'abuse' => (isset($comment['abuse']) ? $comment['abuse'] : '0'),
+                    'approved' => (isset($comment['approved']) ? $comment['approved'] : '1'),
+                    'rating' => (isset($comment['rating']) ? $comment['rating'] : '0')
+                )
+            ));
+            if(!$r){
+                $e[] = $db->error();
+            }
         }
-        $r = $db->query(trim($query, ","));
-        if (!$r) {
-            echo $db->error() . PHP_EOL;
+        if (count($e)) {
+            echo implode(PHP_EOL, $e) . PHP_EOL;
         }
         $db->closeConnection();
-        return $r;
+        return !count($e);
     }
 
     /**
@@ -4304,14 +4428,13 @@ class ImComment
      * 
      * @return {boolean} True if the data was loaded correctly. False instead.
      */
-    function loadFromDb($host, $user, $password, $dbname, $table, $postid)
+    function loadFromDb($db, $table, $postid)
     {
-        $db = new ImDb($host, $user, $password, $dbname);
         if (!$db->testConnection()) {
             return false;
         }
         // WSXTWE-1317: Detect the kind of available fields
-        $columnsResult = $db->query("SHOW COLUMNS FROM `" . $dbname . "`.`" . $table . "`");
+        $columnsResult = $db->tableColumns($table);
         if (is_bool($columnsResult) && !$columnsResult) {
             return false;
         }
@@ -4321,17 +4444,24 @@ class ImComment
         }
 
         // WSXTWE-1222/1224/1283: Only select the fields that we care about
-        $rows = $db->query("SELECT `commentid` AS `id`" . 
-                                    (in_array('email', $columns) ? ", `email`" : "") .
-                                    (in_array('name', $columns) ? ", `name`" : "") .
-                                    (in_array('url', $columns) ? ", `url`" : "") .
-                                    (in_array('body', $columns) ? ", `body`" : "") .
-                                    (in_array('ip', $columns) ? ", `ip`" : "") .
-                                    (in_array('timestamp', $columns) ? ", `timestamp`" : "") .
-                                    (in_array('abuse', $columns) ? ", `abuse`" : "") .
-                                    (in_array('approved', $columns) ? ", `approved`" : "") .
-                                    (in_array('rating', $columns) ? ", `rating`" : "") .
-                                    " FROM `" . $table . "` WHERE postid='" . $postid . "'");
+        $select = array(
+            'select' => array(
+                array('column' => 'commentid', 'as' => 'id')
+            ),
+            'from' => $table,
+            'where' => array('postid' => $postid)
+        );
+        if (in_array('email', $columns)) $select['select'][] = 'email';
+        if (in_array('name', $columns)) $select['select'][] = 'name';
+        if (in_array('url', $columns)) $select['select'][] = 'url';
+        if (in_array('body', $columns)) $select['select'][] = 'body';
+        if (in_array('ip', $columns)) $select['select'][] = 'ip';
+        if (in_array('timestamp', $columns)) $select['select'][] = 'timestamp';
+        if (in_array('abuse', $columns)) $select['select'][] = 'abuse';
+        if (in_array('approved', $columns)) $select['select'][] = 'approved';
+        if (in_array('rating', $columns)) $select['select'][] = 'rating';
+
+        $rows = $db->select($select);
 
         if (is_bool($rows)) {
             $this->comments = array();
@@ -4428,7 +4558,7 @@ class ImComment
      * @param {string}  $sort         Sort by ascending (asc) or descending (desc) order
      * @param {boolean} $approvedOnly Show only approved comments
      * 
-     * @return {array} An array of associative arrays containing the comments data
+     * @return array An array of associative arrays containing the comments data
      */
     function getAll($orderby = "", $sort = "desc", $approvedOnly = true)
     {
@@ -4459,7 +4589,7 @@ class ImComment
      * @param  {string}  $sort            Sort by ascending (asc) or descending (desc) order
      * @param  {boolean} $approvedOnly    Show only approved comments
      * 
-     * @return {array} The list of comments in the page
+     * @return array The list of comments in the page
      */
     function getPage($pageNumber, $commentsPerPage, $orderby = "", $sort = "desc", $approvedOnly = true) {
         $all = $this->getAll($orderby, $sort, $approvedOnly);
@@ -4637,6 +4767,7 @@ interface DatabaseAccess
 {	
     public function testConnection();
     public function closeConnection();
+    public function get_db_name();
     public function createTable($name, $fields);
     public function deleteTable($table);
     public function tableExists($table);
@@ -4719,11 +4850,16 @@ class MySQLDriver implements DatabaseAccess
         @mysql_close($this->conn);
     }
 
+    function get_db_name()
+    {
+        return $this->db_name;
+    }
+
     /**
      * Create a new table or update an existing one.
      * 
-     * @param {string} $name   The table name
-     * @param {array} $fields  The table fields list as array of associative arrays (one array item foreach table field). must be passed as stated in the example.
+     * @param string $name   The table name
+     * @param array $fields  The table fields list as array of associative arrays (one array item foreach table field). must be passed as stated in the example.
      *
      * @example
      * $db->createTable('tableName', array(
@@ -4741,7 +4877,7 @@ class MySQLDriver implements DatabaseAccess
      *     ))
      * );
      * 
-     * @return {boolean} True if the table was created succesfully.
+     * @return boolean True if the table was created succesfully.
      */
     function createTable( $name, $fields )
     {
@@ -4757,6 +4893,7 @@ class MySQLDriver implements DatabaseAccess
                             $value['type'] .
                             ($value['type'] == 'TEXT' || $value['type'] == 'MEDIUMTEXT' ? " CHARACTER SET utf8 COLLATE utf8_unicode_ci" : "") .
                             (!isset($value['null']) || !$value['null'] ? " NOT NULL" : "") .
+                            (isset($value['unique']) && $value['unique'] ? " UNIQUE" : "") .
                             (isset($value['auto_increment']) ? " AUTO_INCREMENT" : "") .
                             (isset($value['more']) ? " " . $value['more'] : "");
                 if (isset($value['primary']) && $value['primary']) {
@@ -4788,6 +4925,7 @@ class MySQLDriver implements DatabaseAccess
                         $qfields[] = " ADD `" . $key . "` " . $fields[$key]['type'] . 
                         ($fields[$key]['type'] == 'TEXT' || $fields[$key]['type'] == 'MEDIUMTEXT' ? " CHARACTER SET utf8 COLLATE utf8_unicode_ci" : "") .
                         (!isset($fields[$key]['null']) || !$fields[$key]['null'] ? " NOT NULL" : "") .
+                        (isset($value['unique']) && $value['unique'] ? " UNIQUE" : "") .
                         (isset($fields[$key]['auto_increment']) && $fields[$key]['auto_increment'] ? " AUTO_INCREMENT" : "") .
                         // WSXTWE-1215: Manage the adding/removal of a primary key
                         (isset($fields[$key]['primary']) && $fields[$key]['primary'] ? " PRIMARY KEY" : "") .
@@ -4830,6 +4968,7 @@ class MySQLDriver implements DatabaseAccess
                                 if ($newLenght > $currentLenght || $fixAutoIncrement) {
                                     $modify = " MODIFY `" . $key . "` " . $value['type'];
                                     $modify .= (!isset($value['null']) || !$value['null'] ? " NOT NULL" : "");
+                                    $modify .= (isset($value['unique']) && $value['unique'] ? " UNIQUE" : "");
                                     $modify .= (isset($value['auto_increment']) && $value['auto_increment'] ? " AUTO_INCREMENT" : "");
                                     $modify .= (isset($value['more']) ? " " . $value['more'] : "");
                                     $qfields[] = $modify;
@@ -4840,6 +4979,7 @@ class MySQLDriver implements DatabaseAccess
                             else if ($type == "varchar" && $newLenght > $currentLenght) {
                                 $modify = " MODIFY `" . $key . "` " . $value['type'];
                                 $modify .= (!isset($value['null']) || !$value['null'] ? " NOT NULL" : "");
+                                $modify .= (isset($value['unique']) && $value['unique'] ? " UNIQUE" : "");
                                 $modify .= (isset($value['more']) ? " " . $value['more'] : "");
                                 $qfields[] = $modify;
                                 $alterTable = true;
@@ -4849,6 +4989,7 @@ class MySQLDriver implements DatabaseAccess
                                 $modify = " MODIFY `" . $key . "` " . $value['type'];
                                 $modify .= " CHARACTER SET utf8 COLLATE utf8_unicode_ci";
                                 $modify .= (!isset($value['null']) || !$value['null'] ? " NOT NULL" : "");
+                                $modify .= (isset($value['unique']) && $value['unique'] ? " UNIQUE" : "");
                                 $modify .= (isset($value['more']) ? " " . $value['more'] : "");
                                 $qfields[] = $modify;
                                 $alterTable = true;
@@ -5033,11 +5174,16 @@ class MySQLiDriver implements DatabaseAccess
         $this->db->close();
     }
 
+    function get_db_name()
+    {
+        return $this->db_name;
+    }
+    
     /**
      * Create a new table or update an existing one.
      * 
-     * @param {string} $name   The table name
-     * @param {array} $fields  The table fields list as array of associative arrays (one array item foreach table field). must be passed as stated in the example.
+     * @param string $name   The table name
+     * @param array $fields  The table fields list as array of associative arrays (one array item foreach table field). must be passed as stated in the example.
      *
      * @example
      * $db->createTable('tableName', array(
@@ -5055,7 +5201,7 @@ class MySQLiDriver implements DatabaseAccess
      *     ))
      * );
      * 
-     * @return {boolean} True if the table was created succesfully.
+     * @return boolean True if the table was created succesfully.
      */
     function createTable( $name, $fields )
     {
@@ -5071,6 +5217,7 @@ class MySQLiDriver implements DatabaseAccess
                             $value['type'] .
                             ($value['type'] == 'TEXT' || $value['type'] == 'MEDIUMTEXT' ? " CHARACTER SET utf8 COLLATE utf8_unicode_ci" : "") .
                             (!isset($value['null']) || !$value['null'] ? " NOT NULL" : "") .
+                            (isset($value['unique']) && $value['unique'] ? " UNIQUE" : "") .
                             (isset($value['auto_increment']) ? " AUTO_INCREMENT" : "") .
                             (isset($value['more']) ? " " . $value['more'] : "");
                 if (isset($value['primary']) && $value['primary']) {
@@ -5102,6 +5249,7 @@ class MySQLiDriver implements DatabaseAccess
                         $qfields[] = " ADD `" . $key . "` " . $fields[$key]['type'] . 
                         ($fields[$key]['type'] == 'TEXT' || $fields[$key]['type'] == 'MEDIUMTEXT' ? " CHARACTER SET utf8 COLLATE utf8_unicode_ci" : "") .
                         (!isset($fields[$key]['null']) || !$fields[$key]['null'] ? " NOT NULL" : "") .
+                        (isset($value['unique']) && $value['unique'] ? " UNIQUE" : "") .
                         (isset($fields[$key]['auto_increment']) && $fields[$key]['auto_increment'] ? " AUTO_INCREMENT" : "") .
                         // WSXTWE-1215: Manage the adding/removal of a primary key
                         (isset($fields[$key]['primary']) && $fields[$key]['primary'] ? " PRIMARY KEY" : "") .
@@ -5143,6 +5291,7 @@ class MySQLiDriver implements DatabaseAccess
                                 if ($newLenght > $currentLenght || $fixAutoIncrement) {
                                     $modify = " MODIFY `" . $key . "` " . $value['type'];
                                     $modify .= (!isset($value['null']) || !$value['null'] ? " NOT NULL" : "");
+                                    $modify .= (isset($value['unique']) && $value['unique'] ? " UNIQUE" : "");
                                     $modify .= (isset($value['auto_increment']) && $value['auto_increment'] ? " AUTO_INCREMENT" : "");
                                     $modify .= (isset($value['more']) ? " " . $value['more'] : "");
                                     $qfields[] = $modify;
@@ -5153,6 +5302,7 @@ class MySQLiDriver implements DatabaseAccess
                             else if ($type == "varchar" && $newLenght > $currentLenght) {
                                 $modify = " MODIFY `" . $key . "` " . $value['type'];
                                 $modify .= (!isset($value['null']) || !$value['null'] ? " NOT NULL" : "");
+                                $modify .= (isset($value['unique']) && $value['unique'] ? " UNIQUE" : "");
                                 $modify .= (isset($value['more']) ? " " . $value['more'] : "");
                                 $qfields[] = $modify;
                                 $alterTable = true;
@@ -5162,6 +5312,7 @@ class MySQLiDriver implements DatabaseAccess
                                 $modify = " MODIFY `" . $key . "` " . $value['type'];
                                 $modify .= " CHARACTER SET utf8 COLLATE utf8_unicode_ci";
                                 $modify .= (!isset($value['null']) || !$value['null'] ? " NOT NULL" : "");
+                                $modify .= (isset($value['unique']) && $value['unique'] ? " UNIQUE" : "");
                                 $modify .= (isset($value['more']) ? " " . $value['more'] : "");
                                 $qfields[] = $modify;
                                 $alterTable = true;
@@ -5298,17 +5449,18 @@ class MySQLiDriver implements DatabaseAccess
  * @class
  * @constructor
  * 
- * @param {string} $host  The database host address
- * @param {string} $user  The database username
- * @param {string} $pwd   The database password
- * @param {string} $db    The database name
+ * @param string $host  The database host address
+ * @param string $user  The database username
+ * @param string $pwd   The database password
+ * @param string $db    The database name
+ * @param string $table_prefix    A prefix for all table names
  */
 class ImDb implements DatabaseAccess
 {
-
     private $driver;
+    private $table_prefix;
     
-    function __construct($host, $user, $pwd, $db)
+    function __construct($host, $user, $pwd, $db, $table_prefix)
     {
         // Detect the correct driver
         if (function_exists("mysqli_connect")) {
@@ -5318,6 +5470,11 @@ class ImDb implements DatabaseAccess
         } else {
             die("No database support detected");
         }
+        $this->table_prefix = $table_prefix;
+    }
+    static function from_db_data($db): ImDb
+    {
+        return new ImDb($db['host'], $db['user'], $db['password'], $db['database'], $db['table_prefix']);
     }
 
     /**
@@ -5338,6 +5495,11 @@ class ImDb implements DatabaseAccess
     function closeConnection()
     {
         $this->driver->closeConnection();
+    }
+
+    function get_db_name()
+    {
+        return $this->driver->get_db_name();
     }
 
     /**
@@ -5366,7 +5528,7 @@ class ImDb implements DatabaseAccess
      */
     function createTable($name, $fields)
     {
-        return $this->driver->createTable($name, $fields);
+        return $this->driver->createTable($this->_prefixed_table_name($name), $fields);
     }
 
     /**
@@ -5378,7 +5540,7 @@ class ImDb implements DatabaseAccess
      */
     function deleteTable($table)
     {
-        $this->driver->deleteTable($table);
+        $this->driver->deleteTable($this->_prefixed_table_name($table));
     }
 
     /**
@@ -5390,7 +5552,7 @@ class ImDb implements DatabaseAccess
      */
     function tableExists($table)
     {
-        return $this->driver->tableExists($table);
+        return $this->driver->tableExists($this->_prefixed_table_name($table));
     }
 
     /**
@@ -5416,13 +5578,238 @@ class ImDb implements DatabaseAccess
     /**
      * Execute a MySQL query.
      * 
-     * @param {string} $query
+     * @param mixed $query if is_string($query) it will be executed, if is_array($query) it's used to call select, update, delete or insert function
      * 
-     * @return {array}        The query result or FALSE on error
+     * @return array        The query result or FALSE on error
      */
     function query($query)
     {
-        return $this->driver->query($query);
+        if (is_string($query)) {
+            return $this->driver->query($query);
+        }
+        if (is_array($query)) {
+            if (isset($query['into'])) {
+                return $this->insert($query);
+            } else if (isset($query['update'])) {
+                return $this->update($query);
+            } else if (isset($query['delete']) || isset($query['delete_from'])) {
+                return $this->delete($query);
+            } else if (isset($query['select']) || isset($query['select_from'])
+                || isset($query['order_by']) || isset($query['orderBy'])
+                || isset($query['group_by']) || isset($query['groupBy'])
+                || isset($query['limit'])) {
+                return $this->select($query);
+            }
+        }
+        return false;
+    }
+
+    function tableColumns($data)
+    {
+        if (is_string($data)) {
+            return $this->query('SHOW COLUMNS FROM ' . $this->table($data));
+        } else if (is_array($data) && isset($data['table'])) {
+            return $this->query('SHOW COLUMNS FROM ' . $this->table($data['table']) . (isset($data['like']) ? ' LIKE \'' . $data['like'] . '\'' : ''));
+        }
+        return false;
+    }
+
+    /**
+     * Execute SQL SELECT.
+     * 
+     * $select_data['select'] => array of 'column_name' (default: all columns).
+     * 
+     * $select_data['from'] or $select_data['select_from'] => table name (mandatory).
+     * 
+     * $select_data['where'] => array of 'column_name' => column_value (default: no conditions).
+     * 
+     * $select_data['where_flat'] => array of 'condition' (default: no conditions).
+     * 
+     * $select_data['order_by'] or $select_data['orderBy'] => array of columns / string of single column name used for ordering results.
+     * 
+     * $select_data['group_by'] or $select_data['groupBy'] => array of columns / string of single column name used for ordering results.
+     * 
+     * @param array $select_data
+     * @return array The SELECT result or false on error
+     */
+    public function select($select_data)
+    {
+        if ($this->testConnection()) {
+			$table_name = isset($select_data['from']) ? $select_data['from'] : $select_data['select_from'];
+            return $this->query('SELECT ' . $this->_to_sql_column_name($select_data['select']) 
+                . ' FROM ' . $this->table($table_name) 
+                . $this->_where($select_data)
+                . $this->_group_by($select_data)
+                . $this->_order_by($select_data)
+                . $this->_query_limit($select_data));
+        }
+        return false;
+    }
+    /**
+     * Execute SQL INSERT.
+     * 
+     * $insert_data['into'] => table name (mandatory).
+     * 
+     * $insert_data['values'] => array of 'column_name' => column_value (mandatory).
+     * 
+     * @param array $insert_data
+     */
+    public function insert($insert_data)
+    {
+        if ($this->testConnection()) {
+            return $this->query('INSERT INTO ' . $this->table($insert_data['into']) . ' ' . $this->_values($insert_data['values']));
+        }
+        return false;
+    }
+    /**
+     * Execute SQL DELETE.
+     * 
+     * $delete_data['from'] or $delete_data['delete_from'] => table name (mandatory).
+     * 
+     * $delete_data['where'] => array of 'column_name' => column_value (default: no conditions).
+     * 
+     * $delete_data['where_flat'] => array of 'condition' (default: no conditions).
+     * 
+     * @param array $delete_data
+     */
+    public function delete($delete_data)
+    {
+        if ($this->testConnection()) {
+			$table_name = isset($delete_data['from']) ? $delete_data['from'] : $delete_data['delete_from'];
+            return $this->query('DELETE FROM ' . $this->table($table_name) . $this->_where($delete_data));
+        }
+        return false;
+    }
+    /**
+     * Execute SQL UPDATE.
+     * 
+     * $update_data['update'] => table name (mandatory).
+     * 
+     * $update_data['set'] => array of 'column_name' => column_value (mandatory).
+     * 
+     * $update_data['where'] => array of 'column_name' => column_value (default: no conditions).
+     * 
+     * $update_data['where_flat'] => array of 'condition' (default: no conditions).
+     * 
+     * @param array $update_data
+     */
+    public function update($update_data)
+    {
+        if ($this->testConnection()) {
+            return $this->query('UPDATE ' . $this->table($update_data['update']) . ' ' . $this->_set($update_data['set']) . $this->_where($update_data));
+        }
+        return false;
+    }
+
+    public function table($table_name): string
+    {
+        return '`' . (strlen($this->get_db_name()) > 0 ? $this->get_db_name() . '`.`' : '') . $this->_prefixed_table_name($table_name) . '`';
+    }
+
+    private function _prefixed_table_name($table_name){
+        return $this->table_prefix . $table_name;
+    }
+    
+    private function _values($values): string
+    {
+        return '(' . $this->_to_sql_column_name(array_keys($values)) . ') VALUES ' . $this->_to_sql_value(array_values($values));
+    }
+    private function _set($values) : string
+    {
+        $set_array = array();
+        foreach ($values as $column => $value) {
+            $set_array[] = $this->_to_sql_column_name($column) . '=' . $this->_to_sql_value($value);
+        }
+        return 'SET ' . implode(', ', $set_array);
+    }
+    private function _where($data) : string
+    {
+        $conditions = $this->_conditions($data);
+        return count($conditions) ? ' WHERE ' . implode(" AND ", $conditions) : '';
+    }
+    private function _conditions($data): array
+    {
+        $conditions = array();
+        if (isset($data['where'])) {
+            foreach ($data['where'] as $column => $value) {
+                $conditions[] = (is_string($value) ? 'BINARY ' : '') . '`' . $column . '` ' . (is_null($value) ? 'IS' : is_array($value) ? 'IN' : '=') . ' ' . $this->_to_sql_value($value);
+            }
+        }
+        if (isset($data['where_flat'])) {
+            if (is_string($data['where_flat'])) {
+                $conditions[] = $data['where_flat'];
+            } else if (is_array($data['where_flat'])) {
+                foreach ($data['where_flat'] as $cond) {
+                    $conditions[] = $cond;
+                }
+            }
+        }
+        return $conditions;
+    }
+    private function _to_sql_value($value): string
+    {
+        if (is_null($value)) {
+            return 'NULL';
+        } else if (is_array($value) && count($value)) {
+            if (isset($value['fn'])) {
+                return strtoupper($value['fn']) . '(' . (isset($value['value']) ? $this->_to_sql_value($value['value']) : '') . ')';
+             } else {
+                return '(' . implode(', ', array_map(array($this, '_to_sql_value'), $value)) . ')';
+            }
+        } else if (is_string($value)) {
+            return '\'' . $this->escapeString($value) . '\'';
+        }
+        return $value;
+    }
+    private function _to_sql_column_name($column): string
+    {
+        if (isset($column)) {
+            if (is_string($column)) {
+                return '`' . $column . '`';
+            }
+            if (is_array($column) && count($column)) {
+                if (isset($column['column']) || isset($column['fn'])) {
+                    $name = $this->_to_sql_column_name($column['column']);
+                    $as = isset($column['as']) ? ' AS ' . $this->_to_sql_column_name($column['as']) : '';
+                    return isset($column['fn']) ? strtoupper($column['fn']) . '(' . $name . ')' . $as : $name . $as;
+                } else {
+                    return implode(', ', array_map(array($this, '_to_sql_column_name'), $column));
+                }
+            }
+        }
+        return '*';
+    }
+    private function _order_by($data): string
+    {
+        $order_data = isset($data['order_by']) ? $data['order_by'] : (isset($data['orderBy']) ? $data['orderBy'] : null);
+        if (!is_null($order_data)) {
+            $arr = array();
+            if (is_string($order_data)) {
+                $arr[] = $this->_to_sql_column_name($order_data);
+            } else if (is_array($order_data)) {
+                foreach ($order_data as $k => $v) {
+                    if (is_int($k)) {
+                        $arr[] = $this->_to_sql_column_name($v);
+                    } else {
+                        $arr[] = $this->_to_sql_column_name($k) . ' ' . strtoupper($v);
+                    }
+                }
+            }
+            return ' ORDER BY ' . implode(', ', $arr);
+        }
+        return '';
+    }
+    private function _group_by($data) : string
+    {
+		$group_by_data = isset($data['group_by']) ? $data['group_by'] : (isset($data['groupBy']) ? $data['groupBy'] : null);
+        if(!is_null($group_by_data)){
+            return ' GROUP BY ' . $this->_to_sql_column_name($group_by_data);
+        }
+        return '';
+    }
+    private function _query_limit($data): string
+    {
+        return isset($data['limit']) ? ' LIMIT ' . implode(', ', $data['limit']) : '';
     }
 
     /**
@@ -5446,6 +5833,34 @@ class ImDb implements DatabaseAccess
     {
         return $this->driver->affectedRows();
     }
+
+    static function clone_tables(ImDb $db, array $table_names_map): array
+    {
+        $results = array();
+        if ($db->testConnection()) {
+            foreach ($table_names_map as $master_table => $clone_table) {
+                $res = array(
+                    'master' => array(
+                        'name' => $master_table,
+                        'exist' => $db->tableExists($master_table),
+                    ),
+                    'clone' => array(
+                        'name' => $clone_table,
+                        'exist' => $db->tableExists($clone_table),
+                    )
+                );
+                if ($res['clone']['exist']) {
+                    $db->deleteTable($clone_table);
+                }
+                if ($res['master']['exist']) {
+                    $db->query('CREATE TABLE ' . $db->table($clone_table) . ' LIKE ' . $db->table($master_table));
+                    $db->query('INSERT INTO ' . $db->table($clone_table) . ' SELECT * FROM ' . $db->table($master_table));
+                }
+                $results[] = $res;
+            }
+        }
+        return $results;
+    }
 }
 
 
@@ -5460,8 +5875,8 @@ class Analytics
 	private $db;
     private $table_name;
 
-	public function __construct($host, $username, $password, $dbname, $tableprefix) {
-		$this->db = new ImDb($host, $username, $password, $dbname);
+	public function __construct($db, $tableprefix) {
+		$this->db = $db;
         $this->table_name = $tableprefix . "_visits";
 		if (!$this->db->testConnection()) {
             die("Analytics: Cannot connect to database");
@@ -5502,13 +5917,15 @@ class Analytics
             $url = substr($url, 0, $pos);
         }
 
-        return $this->db->query(
-            "INSERT INTO `" . $this->table_name . "` (ts, uid, lang, url) VALUES (" .
-            "'" . $this->db->escapeString($ts) . "', " .
-            "'" . $this->db->escapeString($uid) . "', " .
-            "'" . $this->db->escapeString($lang) . "', " .
-            "'" . $this->db->escapeString($url) . "')"
-        );
+        return $this->db->insert(array(
+            'into' => $this->table_name,
+            'values' => array(
+                'ts' => $ts,
+                'uid' => $uid,
+                'lang' => $lang,
+                'url' => $url
+            )
+        ));
 	}
 
 	/**
@@ -5520,12 +5937,17 @@ class Analytics
      * @return Array        An array like $utcData => $numberOfVisitor
 	 */
 	public function getTotalSiteVisitors($from, $to, $url = null) {
-		$results = $this->db->query(
-            "SELECT DATE(`ts`) AS `date`, COUNT(DISTINCT(uid)) AS `count` " .
-            "FROM `" . $this->table_name . "` ".
-            "WHERE DATE(`ts`) >= DATE('" . $this->db->escapeString($from) . "') AND DATE(`ts`) <= DATE('" . $this->db->escapeString($to) . "')" .
-            ($url != null ? " AND url='" . $this->db->escapeString($url) . "' " : " ") .
-            "GROUP BY DATE(`ts`) ORDER BY DATE(`ts`)");
+        $results = $this->db->select(array(
+            'select' => array(
+                array('fn' => 'date', 'column' => 'ts', 'as' => 'date'),
+                array('fn' => 'count', 'column' => array('fn' => 'distinct', 'column' => 'uid'), 'as' => 'count')
+            ),
+            'from' => $this->table_name,
+            'where' => $this->_where($url),
+            'where_flat' => $this->_where_flat($from, $to),
+            'group_by' => 'date',
+            'order_by' => 'date'
+        ));
 
         $curDate = new DateTime($from);
         $endDate = new DateTime($to);
@@ -5554,12 +5976,17 @@ class Analytics
      * @return Array        An array like $utcData => $numberOfViews
 	 */
 	public function getPageViews($from, $to, $url = null) {
-		$results = $this->db->query(
-            "SELECT DATE(`ts`) AS `date`, COUNT(url) AS `count`" .
-            "FROM `" . $this->table_name . "` ".
-            "WHERE DATE(`ts`) >= DATE('" . $this->db->escapeString($from) . "') AND DATE(`ts`) <= DATE('" . $this->db->escapeString($to) . "')" .
-            ($url != null ? " AND url='" . $this->db->escapeString($url) . "' " : "") .
-            "GROUP BY DATE(`ts`) ORDER BY DATE(`ts`)");
+        $results = $this->db->select(array(
+            'select' => array(
+                array('fn' => 'date', 'column' => 'ts', 'as' => 'date'),
+                array('fn' => 'count', 'column' => 'url', 'as' => 'count')
+            ),
+            'from' => $this->table_name,
+            'where' => $this->_where($url),
+            'where_flat' => $this->_where_flat($from, $to),
+            'group_by' => 'date',
+            'order_by' => 'date'
+        ));
 
         $curDate = new DateTime($from);
         $endDate = new DateTime($to);
@@ -5588,12 +6015,18 @@ class Analytics
      * @return Array        An array like $utcData => $numberOfViews
 	 */
 	public function getUniquePageViews($from, $to, $url = null) {
-		$results = $this->db->query(
-            "SELECT url, DATE(`ts`) as `date`, COUNT(DISTINCT(uid)) AS `count`" .
-            "FROM `" . $this->table_name . "` ".
-            "WHERE DATE(`ts`) >= DATE('" . $this->db->escapeString($from) . "') AND DATE(`ts`) <= DATE('" . $this->db->escapeString($to) . "')" .
-            ($url != null ? " AND url='" . $this->db->escapeString($url) . "' " : "") .
-            "GROUP BY url, date ORDER BY DATE(`ts`)");
+        $results = $this->db->select(array(
+            'select' => array(
+                'url',
+                array('fn' => 'date', 'column' => 'ts', 'as' => 'date'),
+                array('fn' => 'count', 'column' => array('fn' => 'distinct', 'column' => 'uid'), 'as' => 'count')
+            ),
+            'from' => $this->table_name,
+            'where' => $this->_where($url),
+            'where_flat' => $this->_where_flat($from, $to),
+            'group_by' => array('url', 'date'),
+            'order_by' => 'date'
+        ));
 
         $curDate = new DateTime($from);
         $endDate = new DateTime($to);
@@ -5630,16 +6063,22 @@ class Analytics
             "data"               => array()
         );
 
-        $curDate = new DateTime($from);
-        $endDate = new DateTime($to);
-
-        $totalcount = $this->db->query("SELECT COUNT(url) AS `count` FROM `" . $this->table_name . "` WHERE DATE(`ts`) >= DATE('" . $from . "') AND DATE(`ts`) <= DATE('" . $to . "')");
+        $totalcount = $this->db->select(array(
+            'select' => array('fn' => 'count', 'column' => 'url', 'as' => 'count'),
+            'from' => $this->table_name,
+            'where_flat' => $this->_where_flat($from, $to)
+        ));
         if (!is_array($totalcount)) {
             return $data;
         }
         $data['total_count'] = $totalcount[0]['count'];
 
-        $uniquecountq = $this->db->query("SELECT COUNT(DISTINCT(url)) AS `count` FROM `" . $this->table_name . "` WHERE DATE(`ts`) >= DATE('" . $from . "') AND DATE(`ts`) <= DATE('" . $to . "') GROUP BY `url`, `uid`");
+        $uniquecountq = $this->db->select(array(
+            'select' => array('fn' => 'count', 'column' => array('fn' => 'distinct', 'column' => 'url'), 'as' => 'count'),
+            'from' => $this->table_name,
+            'where_flat' => $this->_where_flat($from, $to),
+            'group_by' => array('url', 'uid')
+        ));
         if (!is_array($uniquecountq)) {
             return $data;
         }
@@ -5647,14 +6086,21 @@ class Analytics
             $data['total_unique_count'] += $count['count'];
         }
 
-		$results = $this->db->query(
-            "SELECT url, COUNT(uid) AS `count`, COUNT(DISTINCT(uid)) AS `unique_count` " .
-            "FROM `" . $this->table_name . "` " .
-            "WHERE DATE(`ts`) >= DATE('" . $from . "') AND DATE(`ts`) <= DATE('" . $to . "')" .
-            "GROUP BY `url` ".
-            "ORDER BY `" . ($orderByUnique ? "unique_count" : "count") . "` DESC " .
-            ($number > 0 ? "LIMIT 0, " . $number : "")
+        $select = array(
+            'select' => array(
+                'url',
+                array('fn' => 'count', 'column' => 'uid', 'as' => 'count'),
+                array('fn' => 'count', 'column' => array('fn' => 'distinct', 'column' => 'uid'), 'as' => 'unique_count')
+            ),
+            'from' => $this->table_name,
+            'where_flat' => $this->_where_flat($from, $to),
+            'group_by' => 'url',
+            'order_by' => ($orderByUnique ? array('unique_count' => 'desc') : array('count' => 'desc'))
         );
+        if ($number > 0) {
+            $select['limit'] = array(0, $number);
+        }
+        $results = $this->db->select($select);
 
         if (is_array($results)) {
             foreach ($results as $entry) {
@@ -5685,20 +6131,30 @@ class Analytics
             "data"        => array()
         );
 
-        $total = $this->db->query("SELECT COUNT(DISTINCT(uid)) as `count` FROM `" . $this->table_name . "` WHERE DATE(`ts`) >= DATE('" . $from . "') AND DATE(`ts`) <= DATE('" . $to . "')");
+        $total = $this->db->select(array(
+            'select' => array('fn' => 'count', 'column' => array('fn' => 'distinct', 'column' => 'uid'), 'as' => 'count'),
+            'from' => $this->table_name,
+            'where_flat' => $this->_where_flat($from, $to)
+        ));
         if (!is_array($total)) {
             return $data;
         }
         $data['total_count'] = $total[0]['count'];
 
-        $results = $this->db->query(
-            "SELECT lang, COUNT(DISTINCT(uid)) AS `count` " .
-            "FROM `" . $this->table_name . "` " .
-            "WHERE DATE(`ts`) >= DATE('" . $from . "') AND DATE(`ts`) <= DATE('" . $to . "')" .
-            "GROUP BY `lang` ".
-            "ORDER BY `count` DESC " .
-            ($number > 0 ? "LIMIT 0, " . $number : "")
+        $select = array(
+            'select' => array(
+                'lang',
+                array('fn' => 'count', 'column' => array('fn' => 'distinct', 'column' => 'uid'), 'as' => 'count')
+            ),
+            'from' => $this->table_name,
+            'where_flat' => $this->_where_flat($from, $to),
+            'group_by' => 'lang',
+            'order_by' => array('count' => 'desc')
         );
+        if ($number > 0) {
+            $select['limit'] = array(0, $number);
+        }
+        $results = $this->db->select($select);
 
         if (is_array($results)) {
             foreach ($results as $entry) {
@@ -5729,7 +6185,23 @@ class Analytics
                 )
             );
 		}
-	}
+    }
+
+    private function _where($url): array
+    {
+        if (is_null($url)) {
+            return array();
+        } else {
+            return array('url' => $url);
+        }
+    }
+    private function _where_flat($from, $to): array
+    {
+        return array(
+            'DATE(`ts`) >= DATE(\'' . $this->db->escapeString($from) . '\')',
+            'DATE(`ts`) <= DATE(\'' . $this->db->escapeString($to) . '\')'
+        );
+    }
 }
 
 
@@ -5812,13 +6284,12 @@ class DynamicObject
 		return @file_put_contents($folder . $this->storageId . ".txt", $this->body);
 	}
 
-	function loadFromDb($host, $user, $password, $db, $table)
+	function loadFromDb($db, $table)
 	{
-		$db = new ImDb($host, $user, $password, $db);
 		if (!$db->testConnection()) {
 			return false;
 		}
-		$data = $db->query("SELECT * FROM `" . $table . "` WHERE id='" . $db->escapeString($this->storageId) . "'");
+		$data = $db->select(array('from' => $table, 'where' => array('id' => $this->storageId)));
 		if (is_bool($data)) {
 			return false;
 		}
@@ -5829,9 +6300,8 @@ class DynamicObject
 		return true;
 	}
 
-	function saveToDb($host, $user, $password, $db, $table)
+	function saveToDb($db, $table)
 	{
-		$db = new ImDb($host, $user, $password, $db);
 		if (!$db->testConnection()) {
 			return false;
 		}
@@ -5842,11 +6312,11 @@ class DynamicObject
 	            "body" => array('type' => 'MEDIUMTEXT')
 	        )
 	    );
-	    $exists = $db->query("SELECT * FROM `" . $table . "` WHERE id='" . $db->escapeString($this->storageId) . "'");
-	    if ($exists) {
-	    	return $db->query("UPDATE `" . $table . "` SET body='" . $db->escapeString($this->body) . "' WHERE id='" . $db->escapeString($this->storageId) . "'");
-	    }
-	    return $db->query("INSERT INTO `" . $table . "` (id, body) VALUES ('" . $db->escapeString($this->storageId) . "', '" . $db->escapeString($this->body) . "')");
+		$exists = $db->select(array('from' => $table, 'where' => array('id' => $this->storageId)));
+		if ($exists) {
+			return $db->update(array('update' => $table, 'set' => array('body' => $this->body), 'where' => array('id' => $this->storageId)));
+		}
+		return $db->insert(array('into' => $table, 'values' => array('id' => $this->storageId, 'body' => $this->body)));
 	}	
 }
 
@@ -6002,15 +6472,12 @@ class ImForm
      * 
      * @return boolean
      */
-    function saveToDb($host, $user, $passwd, $database, $table)
+    function saveToDb($db, $table)
     {
-        $db = new ImDb($host, $user, $passwd, $database);
         if (!$db->testConnection())
             return false;
 
         $fields = array();
-        $names = array();
-        $values = array();
 
         // WSXTWE-1215: Add an autoincrement primary key
         $fields["id"] = array(
@@ -6020,14 +6487,14 @@ class ImForm
             "primary" => true
         );
         $i = 0;
+        $insert = array('into' => $table, 'values' => array());
         foreach ($this->fields as $field) {
             if (!$field['isSeparator']) {
                 $name = isset($field['dbname']) && $field['dbname'] !== "" ? $field['dbname'] : "field_" . $i++;
                 $fields[$name] = array(
                     "type" => "TEXT"
                 );
-                $names[] = "`" . $name . "`";
-                $values[] = "'" . $db->escapeString(is_array($field['value']) ? implode(", ", $field['value']) : $field['value']) . "'";
+                $insert['values'][$name] = is_array($field['value']) ? implode(", ", $field['value']) : $field['value'];
             }
         }
         $i = 0;
@@ -6037,8 +6504,8 @@ class ImForm
             $fields[$fieldname] = array(
                 "type" => "TEXT"
             );
-            $names[] = "`" . $fieldname . "`";
-            $values[] = "'" . $db->escapeString($filename) . "'";
+            $insert['values'][$fieldname] = $filename;
+           
             // Create and check the folder
             $folder = "../";
             if (($pos = strpos($file['folder'], "/")) === 0)
@@ -6055,8 +6522,7 @@ class ImForm
         $db->createTable($table, $fields);
 
         // Save the fields data
-        $query = "INSERT INTO `" . $table . "` (" . implode(",", $names) . ") VALUES (" . implode(",", $values) . ")";
-        $db->query($query);
+        $db->insert($insert);
         $db->closeConnection();
         return true;
     }
@@ -6263,7 +6729,7 @@ class ImGuestbook
 		foreach ($imSettings['guestbooks'] as $gb) {
 			$comments = new ImTopic($gb['id'], "../", "index.php?id=" . $gb['id']);
 	        if ($gb['sendmode'] == "db")
-	            $comments->loadDb($gb['host'], $gb['user'], $gb['password'], $gb['database'], $gb['table']);
+	            $comments->loadDb(ImDb::from_db_data(getDbData($gb['dbid'])), $gb['table']);
 	        else
 	            $comments->loadXML($gb['folder']);
 	        foreach ($comments->getComments($from, $to, $approved) as $comment) {
@@ -6500,6 +6966,9 @@ class Notifier
  */
 class imPrivateArea
 {
+    private const CNG_PWD_TOKEN_LENGTH = 32;
+    private const CNG_PWD_TOKEN_EXPIRE_TIME = 86400; //1 day
+
     public $admin_email;
 
     private $session_type;
@@ -6510,6 +6979,7 @@ class imPrivateArea
     private $session_uid;
     private $session_gids;
     private $session_page;
+    private $session_change_pwd_request;
     private $cookie_name;
     private $salt;
     private $db = false;
@@ -6525,6 +6995,7 @@ class imPrivateArea
         $this->session_first_name = "im_access_first_name";
         $this->session_last_name  = "im_access_last_name";
         $this->session_page       = "im_access_request_page";
+        $this->session_change_pwd_request = 'im_access_change_pwd_request';
         $this->session_uid        = "im_access_uid";
         $this->session_gids       = "im_access_gids";
         $this->cookie_name        = "im_access_cookie_uid";
@@ -6545,36 +7016,54 @@ class imPrivateArea
      */
     public function login($email, $pwd)
     {
-        $imSettings = Configuration::getSettings();
-
         if (!strlen($email) || !strlen($pwd))
             return -2;
 
-        // Check if the user exists in the hardcoded file
-        if (isset($imSettings['access']['users'][$email]) && $imSettings['access']['users'][$email]['password'] == $pwd) {
-            $this->_setSession(
-                "1",
-                $imSettings['access']['users'][$email]['id'],
-                $imSettings['access']['users'][$email]['groups'],
-                $email,
-                $imSettings['access']['users'][$email]['firstname'],
-                $imSettings['access']['users'][$email]['lastname']
-            );
-            return 0;
+        $user = $this->getUserByUsername($email);
+        if ($user && self::_check_password($pwd, $user['password'], $user['crypt_encoding'])) {
+            if (!$user['validated']) {
+                return -5;
+            } else if ($this->_setLoggedUser($user)) {
+                return 0;
+            }
         }
-        // WSXELE-467
-        // If the DB is "false" it means that the db was not set up in WSX5.
-        // If the DB itself is not accessible, the user receives another error when the DB data is set in this class
-        if (!$this->db)
-            return -2;
-        // Check if the user exists in the DB and it's validated
-        $user = $this->db->query("SELECT * FROM `" . $this->db_table . "` WHERE BINARY `email`='" . $this->db->escapeString($email) . "' AND BINARY `password`='" . $this->db->escapeString($pwd) . "'");
-        if (!is_array($user) || !count($user))
-            return -2;
-        if (!$user[0]['validated'])
-            return -5;
-        $this->_setSession("0", $user[0]['id'], isset($imSettings['access']['webregistrations_gid']) ? array($imSettings['access']['webregistrations_gid']) : array(), $user[0]['email'], $user[0]['firstname'], $user[0]['lastname']);
-        return 0;
+        return -2;
+    }
+
+    private static function _encode_password($pwd){
+        return self::_password_crypt_encoding()['encode']($pwd);
+    }
+
+    private static function _check_password($pwd, $encoded, $encoding_id){
+        return self::_password_crypt_encoding($encoding_id)['check']($pwd, $encoded);
+    }
+
+    private static function _password_crypt_encoding($encoding_id = null){
+        $imSettings = Configuration::getSettings();
+        return isset( $imSettings['access']['password_crypt']['encodings'][$encoding_id]) ?  $imSettings['access']['password_crypt']['encodings'][$encoding_id] 
+            :  $imSettings['access']['password_crypt']['encodings'][$imSettings['access']['password_crypt']['encoding_id']];
+    }
+
+    public function encrypt_DB_passwords($no_crypt_encoding_id)
+    {
+        $encoding_id = Configuration::getSettings()['access']['password_crypt']['encoding_id'];
+        $select = $this->db->select(array(
+		"select" => array("id", "password"),
+		"from" => $this->db_table,
+		"where_flat" => "crypt_encoding = '" . $no_crypt_encoding_id . "' OR crypt_encoding = '' OR crypt_encoding is NULL"
+	));
+        if (!is_bool($select)) {
+            foreach ($select as $info) {
+                $this->db->update(array(
+			"update" => $this->db_table,
+			"set" => array(
+				"password" => self::_encode_password($info['password']),
+				"crypt_encoding" => $encoding_id
+			),
+			"where" => $info['id']
+		));
+            }
+        }
     }
 
     /**
@@ -6603,7 +7092,6 @@ class imPrivateArea
      */
     public function savePage($page = "")
     {
-        $imSettings = Configuration::getSettings();
         $url = strlen($page) ? $page : $_SERVER['REQUEST_URI'];
         $_SESSION[$this->session_page] = $this->_encode($url, $this->salt);
     }
@@ -6650,7 +7138,6 @@ class imPrivateArea
      */
     public function whoIsLogged()
     {
-        $imSettings = Configuration::getSettings();
         if (isset($_SESSION[$this->session_email]) && $_SESSION[$this->session_email] != "" && isset($_SESSION[$this->session_email])) {
             $email = $this->_decode($_SESSION[$this->session_email], $this->salt);
             $firstname = trim($this->_decode($_SESSION[$this->session_first_name], $this->salt));
@@ -6747,6 +7234,9 @@ class imPrivateArea
         switch ($code) {
 
             // Error
+            case -12 : return l10n("private_area_password_recovery_not_equals_passwords", "Confirmation password is different from password.");
+            case -11 : return l10n("private_area_password_recovery_expired_token", "Your change password request has expired, do it again.");
+            case -10 : return l10n("private_area_password_recovery_bad_request", "Bad Request!");
             case -9 :
             $reason = l10n("form_password", "The password entered must comply with the following rules:");
             $reason = $reason . "<br>" . str_replace("{0}", $imSettings['password_policy']['minimum_characters'], l10n("form_password_length", "- at least {0} characters"));
@@ -6803,19 +7293,31 @@ class imPrivateArea
      */
     public function getUserByUsername($username)
     {
-        $imSettings = Configuration::getSettings();
+        // Search in the DB
+        if ($this->db) {
+            $users = $this->_get_db_users(array('email' => $username));
+            if (is_array($users) && count($users) > 0) {
+                return $users[0];
+            }
+        }
+        return self::_get_local_user($username);;
+    }
 
-        // Search in the file
+    private static function _get_local_user($username)
+    {
+        $imSettings = Configuration::getSettings();
         if (isset($imSettings['access']['users'][$username])) {
             $user = $imSettings['access']['users'][$username];
             return array(
+                'user_type' => '1',
+                'db_stored' => false,
                 "id"        => $user['id'],
                 "ts"        => "",
                 "ip"        => "",
-                "email"     => $user['email'],
-                // Compatibility mode for old code snippets
                 "username"  => $user['email'],
+                "email"     => $user['email'],
                 "password"  => $user['password'],
+                "orderscount" => Configuration::getCart()->getOrdersCountByEmail($user['email']),
                 "firstname" => $user['firstname'],
                 "lastname"  => $user['lastname'],
                 // Compatibility mode for old code snippets
@@ -6823,36 +7325,13 @@ class imPrivateArea
                 "key"       => "",
                 "validated" => true,
                 "groups"    => $user['groups'],
-                "hash"      => $this->_getUserHash($username, $user['password'])
+                "hash"      => self::_getUserHash($username, $user['password']),
+                "crypt_encoding" => $user['crypt_encoding']
             );
-        }
-        // Search in the DB
-        if ($this->db) {
-            $res = $this->db->query("SELECT * FROM `" . $this->db_table . "` WHERE `email`='" . $this->db->escapeString($username) . "'");
-            if (is_array($res) && count($res) > 0) {
-                $user = $res[0];
-                return array(
-                    "id"        => $user['id'],
-                    "ts"        => $user['ts'],
-                    "ip"        => $user['ip'],
-                    "email"     => $user['email'],
-                    // Compatibility mode for old code snippets
-                    "username"  => $user['email'],
-                    "password"  => $user['password'],
-                    "firstname" => $user['firstname'],
-                    "lastname"  => $user['lastname'],
-                    // Compatibility mode for old code snippets
-                    "realname"  => isset($user['realname']) ? $user['realname'] : trim($user['firstname'] . " " . $user['lastname']),
-                    "key"       => $user['key'],
-                    "validated" => $user['validated'],
-                    "groups"    => array($imSettings['access']['webregistrations_gid']),
-                    "hash"      => $this->_getUserHash($user['email'], $user['password'])
-                );
-            }
         }
         return null;
     }
-
+    
 
     /**
      * Get the user data relative to an hash.
@@ -6865,18 +7344,17 @@ class imPrivateArea
      */
     public function getUserByHash($hash)
     {
-        $imSettings = Configuration::getSettings();
-
-        // Look inside the static entries
-        foreach ($imSettings['access']['users'] as $user => $data) {
-            if ($this->_getUserHash($user, $data['password']) == $hash) {
-                return $this->getUserByUsername($user);
-            }
-        }
         // Look inside the database
-        foreach ($this->getUsersById() as $data) {
+        foreach ($this->_get_db_users() as $data) {
             if ($data['hash'] == $hash) {
                 return $data;
+            }
+        }
+        
+        // Look inside the static entries
+        foreach (Configuration::getSettings()['access']['users'] as $user => $data) {
+            if (self::_getUserHash($user, $data['password']) == $hash) {
+                return $this->getUserByUsername($user);
             }
         }
         return false;
@@ -6923,16 +7401,20 @@ class imPrivateArea
     {
         $imSettings = Configuration::getSettings();
 
-        // Look inside the static entries
-        foreach ($imSettings['access']['users'] as $user => $data) {
-            if ($this->_isTokenValidForUser($token, $user)) {
-                return $this->login($user, $data['password']);
+        // Look inside the database
+        foreach ($this->_get_db_users() as $data) {
+            if (self::_isTokenValidForUser($token, $data['email'])) {
+                if ($this->_setLoggedUser($data)) {
+                    return 0;
+                }
             }
         }
-        // Look inside the database
-        foreach ($this->getUsersById() as $data) {
-            if ($this->_isTokenValidForUser($token, $user)) {
-                return $this->login($data['username'], $data['password']);
+        // Look inside the static entries
+        foreach ($imSettings['access']['users'] as $user => $data) {
+            if (self::_isTokenValidForUser($token, $user)) {
+                if ($this->_setLoggedUser(self::_get_local_user($user))) {
+                    return 0;
+                }
             }
         }
         return -2;
@@ -6944,7 +7426,7 @@ class imPrivateArea
      * @param  {string}  $username
      * @return boolean
      */
-    private function _isTokenValidForUser($token, $username)
+    private static function _isTokenValidForUser($token, $username)
     {
         $imSettings = Configuration::getSettings();
 
@@ -6968,50 +7450,70 @@ class imPrivateArea
     public function getUsersById($ids = array(), $from = "", $to = "")
     {
         if (is_string($ids)) {
-            if (strlen($ids))
-                $ids = array($ids);
-            else
+            if (strlen($ids)) {
+                $ids = array_map('trim', explode(',', $ids));
+            } else {
                 $ids = array();
-        }
-
-        $users = array();
-        if ($this->db) {
-            $conditions = array();
-            $query = "SELECT * FROM `" . $this->db_table . "`";
-            if (count($ids)) {
-                $conditions[] = "`id` IN (" . implode(",", $ids) . ")";
             }
+        }
+        $ids_count = count($ids);
+        $id_condition = $ids_count == 1 ? intval($ids[0]) : $ids_count > 1 ? array_map('intval', $ids) : false;
+        if ($id_condition) {
+            $where_conditions['id'] = $id_condition;
+        }
+        return $this->_get_db_users($where_conditions, $from, $to);
+    }
+
+    private function _user_query($where_conditions = array(), $from = "", $to = "")
+    {
+        if ($this->db) {
+            $flat_conditions = array();
             if (strlen($from)) {
-                $conditions[] = "`ts` >= '" . $this->db->escapeString($from) . "'";
+                $flat_conditions[] = "`ts` >= '" . $this->db->escapeString($from) . "'";
             }
             if (strlen($to)) {
-                $conditions[] = "`ts` <= '" . $this->db->escapeString($to) . "'";
+                $flat_conditions[] = "`ts` <= '" . $this->db->escapeString($to) . "'";
             }
-            if (count($conditions)) {
-                $query .= " WHERE " . join(" AND ", $conditions);
-            }
-            $res = $this->db->query($query);
 
-            if (is_array($res)) {
-                $ecommerce = Configuration::getCart();
-                foreach ($res as $user) {
-                    $orders =
-                    $users[] = array(
-                        "id"          => $user['id'],
-                        "ts"          => $user['ts'],
-                        "ip"          => $user['ip'],
-                        "email"       => $user['email'],
-                        "password"    => $user['password'],
-                        "orderscount" => $ecommerce->getOrdersCountByEmail($user['email']),
-                        "firstname"   => $user['firstname'],
-                        "lastname"    => $user['lastname'],
-                        // Compatibility with older code snippets
-                        "realname"    => isset($user['realname']) ? $user['realname'] : trim($user['firstname'] . " " . $user['lastname']),
-                        "key"         => $user['key'],
-                        "validated"   => $user['validated'],
-                        "hash"        => $this->_getUserHash($user['email'], $user['password'])
-                    );
-                }
+            return $this->db->select(array(
+                'select' => array('id', 'ts', 'ip', 'password', 'firstname', 'lastname', 'email', 'key', 'validated', 'crypt_encoding'),
+                'from' => $this->db_table,
+                'where' => $where_conditions,
+                'where_flat' => $flat_conditions
+            ));
+        }
+        return false;
+    }
+  
+    private function _get_db_users($where_conditions = array(), $from = "", $to = "")
+    {
+        $users = array();
+        $db_users = $this->_user_query($where_conditions, $from, $to);
+        if ($db_users) {
+            $default_groups_array = array(Configuration::getSettings()['access']['webregistrations_gid']);
+            $ecommerce = Configuration::getCart();
+            foreach ($db_users as $user) {
+                $local_user = self::_get_local_user($user['email']);
+                $users[] = array(
+                    'user_type'   => isset($local_user['user_type']) ? $local_user['user_type'] : '0',
+                    'db_stored'   => true,
+                    "id"          => isset($local_user['id']) ? $local_user['id'] : $user['id'],
+                    "ts"          => $user['ts'],
+                    "ip"          => $user['ip'],
+                    'username'    => $user['email'],
+                    "email"       => $user['email'],
+                    "password"    => $user['password'],
+                    "orderscount" => $ecommerce->getOrdersCountByEmail($user['email']),
+                    "firstname"   => $user['firstname'],
+                    "lastname"    => $user['lastname'],
+                    // Compatibility with older code snippets
+                    "realname"    => isset($user['realname']) ? $user['realname'] : trim($user['firstname'] . " " . $user['lastname']),
+                    "key"         => $user['key'],
+                    "validated"   => $user['validated'],
+                    'groups'      => isset($local_user['groups']) ? $local_user['groups'] : $default_groups_array,
+                    "hash"        => self::_getUserHash($user['email'], $user['password']),
+                    'crypt_encoding' => $user['crypt_encoding']
+                );
             }
         }
         return $users;
@@ -7029,12 +7531,15 @@ class imPrivateArea
      *
      * @return {Void}
      */
-    public function setDBData($host, $username, $password, $dbname, $dbtable)
+    public function setDBData($db, $dbtable)
     {
-        $this->db = new ImDb($host, $username, $password, $dbname);
-        $this->db_table = $dbtable;
-        if (!$this->db->testConnection())
-            die("Unable to connect to DB");
+        $this->db = $db;
+        if ($this->db->testConnection()) {
+            $this->db_table = $dbtable;
+            $this->createUsersTable();
+            return $this->db;
+        }
+        die("Unable to connect to DB");
     }
 
     /**
@@ -7058,7 +7563,22 @@ class imPrivateArea
             "users" => array()
         );
         if ($this->db->tableExists($this->db_table)) {
-            $users["users"] = $this->getUsersById();
+            $users["users"] = $this->_get_db_users();
+        }
+        return json_encode($users);
+    }
+
+    public function getDbUsers($wsx5_call_version)
+    {
+        if (!$this->db) {
+            return "";
+        }
+        $users = array(
+            "extra" => array("version" => 1,  "wsx5CallVersion" => $wsx5_call_version, "timestamp" => date("Y-m-d H:i:s")),
+            "users" => array()
+        );
+        if ($this->db->tableExists($this->db_table)) {
+            $users["users"] = $this->_user_query();
         }
         return json_encode($users);
     }
@@ -7077,7 +7597,11 @@ class imPrivateArea
             $dbids = array($dbids);
         if (!count($dbids))
             return false;
-        $this->db->query("UPDATE `" . $this->db_table . "` SET `validated`=1, ts=ts WHERE `validated`=0 AND `id` IN (" . implode(",", $this->db->escapeString($dbids)) . ")");
+        $this->db->update(array(
+            'update' => $this->db_table,
+            'set' => array('validated' => 1),
+            'where' => array('validated' => 0, 'id' => $dbids)
+        ));
         return $this->db->affectedRows() > 0;
     }
 
@@ -7092,19 +7616,18 @@ class imPrivateArea
      */
     public function validateWaitingUserByKey($keys = array(), $login = false)
     {
-        $user = false;
         if (!is_array($keys))
             $keys = array($keys);
 
-        if ($login && count($keys) == 1) {
-            $user = $this->db->query("SELECT `email`, `password` FROM `" . $this->db_table . "` WHERE `key`='" . $this->db->escapeString($keys[0]) . "'");
-            if (is_bool($user))
-                return false;
-            $user = $user[0];
+        $this->db->update(array(
+            'update' => $this->db_table,
+            'set' => array('validated' => 1, 'ip' => $_SERVER['REMOTE_ADDR'], 'ts' => array('fn' => 'now')),
+            'where' => array('validated' => 0, 'key' => $keys)
+        ));
+        if ($login && count($keys) == 1 && $this->db->affectedRows()){
+            $user = $this->getUserByUsername($this->db->select(array("select" => "email", "from" => $this->db_table, "where" => array("key" => $keys[0])))[0]);
+            return $this->_setLoggedUser($user);
         }
-        $this->db->query("UPDATE `" . $this->db_table . "` SET `validated`=1, `ts`=NOW(), `ip`='" . $this->db->escapeString($_SERVER['REMOTE_ADDR']) . "' WHERE `validated`=0 AND `key` IN ('" . implode("','", $this->db->escapeString($keys)) . "')");
-        if ($user && $this->db->affectedRows())
-            return $this->login($user['email'], $user['password']) == 0;
         return $this->db->affectedRows() > 0;
     }
 
@@ -7121,12 +7644,12 @@ class imPrivateArea
     {
         if (!$this->db || !$this->db->tableExists($this->db_table))
             return;
-        $query = "DELETE FROM `" . $this->db_table . "` WHERE `ts`<='" . $this->db->escapeString($ts) . "'";
+        $query = array('delete_from' => $this->db_table, 'where_flat' => array('`ts`<=\'' . $this->db->escapeString($ts) . '\''));
         if (!is_array($usersToKeep))
             $usersToKeep = array($usersToKeep);
         if (count($usersToKeep))
-            $query .= " AND id NOT IN (" . implode(",", $this->db->escapeString($usersToKeep)) . ")";
-        $this->db->query($query);
+            $query['where_flat'][] = "id NOT IN (" . implode(",", $this->db->escapeString($usersToKeep)) . ")";
+        $this->db->delete($query);
     }
 
     /**
@@ -7139,7 +7662,7 @@ class imPrivateArea
      */
     public function getKeyFromId($dbid)
     {
-        $key = $this->db->query("SELECT `key` FROM `" . $this->db_table . "` WHERE `id`=" . (int)$dbid);
+        $key = $this->db->select(array('select' => 'key', 'from' => $this->db_table, 'where' => array('id' => (int) $dbid)));
         if (!is_bool($key) && count($key))
             return $key[0]['key'];
         return false;
@@ -7165,13 +7688,17 @@ class imPrivateArea
                     "lastname"  => array('type' => 'TEXT', "default" => "NULL"),
                     "email"     => array('type' => 'TEXT'),
                     "key"       => array('type' => 'VARCHAR(32)'),
-                    "validated" => array('type' => 'INT(1)')
+                    "validated" => array('type' => 'INT(1)'),
+                    "crypt_encoding" => array('type' => 'TEXT', 'null' => true, 'default' => null),
+                    "cng_pwd_token" => array('type' => 'VARCHAR(' . 2 * self::CNG_PWD_TOKEN_LENGTH . ')', 'null' => true, 'unique' => true, 'default' => null),
+                    "cng_pwd_token_expire" => array('type' => 'INT(11)', 'null' => true, 'default' => null)
                 )
             );
             // Compatibility: the realname field used in the old tables
             // did not set a default text...so it fails during inserts
-            if (count($this->db->query("SHOW COLUMNS FROM `" . $this->db_table . "` LIKE 'realname'"))) {
-                $this->db->query("ALTER TABLE `" . $this->db_table . "` CHANGE `realname` `realname` TEXT CHARACTER SET utf8 COLLATE utf8_unicode_ci NULL DEFAULT NULL");
+            $col = $this->db->tableColumns(array('table'=>$this->db_table, 'like' => 'realname'));
+            if (is_array($col) && count($col)) {
+                $this->db->query("ALTER TABLE `" . $this->db->table($this->db_table) . "` CHANGE `realname` `realname` TEXT CHARACTER SET utf8 COLLATE utf8_unicode_ci NULL DEFAULT NULL");
             }
         }
     }
@@ -7188,57 +7715,64 @@ class imPrivateArea
      *
      * @return {int} the user's ID or the error number (-1: user already exists, -2: generic error)
      */
-    public function registerNewUser($email, $password, $firstname, $lastname, $validated)
+    public function registerNewUser($email, $password, $firstname, $lastname, $validated, $skipSetSimpleSession = false)
     {
         $imSettings = Configuration::getSettings();
 
         //check that the password policy is respected, if enabled password policy
-		if($imSettings['password_policy']['required_policy']){
-
-            $requiredPolicy = $imSettings['password_policy']['required_policy'];
-            $includeUpperCase = $imSettings['password_policy']['include_uppercase'];
-            $includeNumeric = $imSettings['password_policy']['include_numeric'];
-            $includeSpecial = $imSettings['password_policy']['include_special'];
-            $minimumCharacters = $imSettings['password_policy']['minimum_characters'];
-
-		    $upperCaseIsValid = !(bool) $includeUpperCase || (bool) $includeUpperCase && preg_match("/[A-Z]/", $password);
-			$numericIsValid = !(bool) $includeNumeric || (bool) $includeNumeric && preg_match("/[0-9]/", $password);
-			$symbolsAreValid = !(bool) $includeSpecial || (bool) $includeSpecial && preg_match("/[!?<>#$%&*@()]/", $password);
-			if(strlen($password) < $minimumCharacters || !$upperCaseIsValid || !$numericIsValid || !$symbolsAreValid){
-				return -9;
-			}
-		}
+        if (!self::_check_password_policy($password)) {
+            return -9;
+        }
 
         if (!$this->db)
             return -1;
         if (!strlen($password) || !strlen($email))
             return -1;
 
-        $this->createUsersTable();
-
         // Check if the user already exists in the hardcoded file
         if (isset($imSettings['access']['users'][$email]))
             return -6;
 
         // Check if the user already exists in the DB
-        if (count($this->db->query("SELECT  `email` FROM `" . $this->db_table . "` WHERE `email`='" . $this->db->escapeString($email) . "'")))
+        if (count($this->db->select(array('select' => 'email', 'from' => $this->db_table, 'where' => array('email' => $email)))))
             return -6;
 
-        // Create the user's record
-        $this->db->query("INSERT INTO `" . $this->db_table . "` (`ts`, `ip`, `email`, `password`, `firstname`, `lastname`, `key`, `validated`) VALUES (" .
-            "'" . date("Y-m-d H:i:s") . "'," .
-            "'" . $this->db->escapeString($_SERVER['REMOTE_ADDR']) . "'," .
-            "'" . $this->db->escapeString($email) . "'," .
-            "'" . $this->db->escapeString($password) . "'," .
-            "'" . $this->db->escapeString($firstname) . "'," .
-            "'" . $this->db->escapeString($lastname) . "'," .
-            "'" . md5($email . $password . date("U") . rand(1000, 9999)) . "'," .
-            "'" . $this->db->escapeString($validated) . "'" .
-        ")");
-
         // Save the basic data about this user
-        $this->_setSimpleSession($email, $firstname, $lastname);
+        if (!$skipSetSimpleSession) {
+            $this->_setSimpleSession($email, $firstname, $lastname);
+        }
 
+        return $this->createUser($email, $password, $firstname, $lastname, $validated);
+    }
+
+    private static function _check_password_policy(string $password): bool
+    {
+        $imSettings = Configuration::getSettings();
+        if ($imSettings['password_policy']['required_policy']) {
+            return (!isset($imSettings['password_policy']['minimum_characters']) || strlen($password) >= $imSettings['password_policy']['minimum_characters'])
+                && (!isset($imSettings['password_policy']['include_uppercase']) || !$imSettings['password_policy']['include_uppercase'] || preg_match("/[A-Z]/", $password))
+                && (!isset($imSettings['password_policy']['include_numeric']) || !$imSettings['password_policy']['include_numeric'] || preg_match("/[0-9]/", $password))
+                && (!isset($imSettings['password_policy']['include_special']) || !$imSettings['password_policy']['include_special'] || preg_match("/[!?<>#$%&*@()]/", $password));
+        }
+        return strlen($password) > 0;
+    }
+
+    public function createUser($email, $password, $firstname, $lastname, $validated)
+    {
+        $this->db->insert(array(
+            'into' => $this->db_table,
+            'values' => array(
+                'ts' => date("Y-m-d H:i:s"),
+                'ip' => $_SERVER['REMOTE_ADDR'],
+                'email' => $email,
+                'password' => self::_encode_password($password),
+                'firstname' => $firstname,
+                'lastname' => $lastname,
+                'key' => md5($email . $password . date("U") . rand(1000, 9999)),
+                'validated' => $validated,
+                'crypt_encoding' => Configuration::getSettings()['access']['password_crypt']['encoding_id']
+            )
+        ));
         return $this->db->lastInsertId();
     }
 
@@ -7247,9 +7781,13 @@ class imPrivateArea
      * @param  String $email
      * @return Void
      */
-    public function deleteUser($email) {
+    public function deleteUser($email)
+    {
         if ($this->db) {
-            $this->db->query("DELETE FROM `" . $this->db_table . "` WHERE `email`='" . $this->db->escapeString($email) . "'");
+            $this->db->delete(array(
+                'from' => $this->db_table,
+                'where' => array('email' => $email)
+            ));
         }
     }
 
@@ -7267,8 +7805,7 @@ class imPrivateArea
         $imSettings = Configuration::getSettings();
         $html = "";
 
-        $user = $this->getUsersById($id);
-        $user = $user[0];
+        $user = $this->_get_db_users(array('id' => intval($id)))[0];
         if (is_bool($user) || !count($user))
             return;
 
@@ -7312,8 +7849,7 @@ class imPrivateArea
 
         $html = "";
 
-        $user = $this->getUsersById($dbid);
-        $user = $user[0];
+        $user = $this->_get_db_users(array('id' => intval($dbid)))[0];
         if (is_bool($user) || !count($user))
             return;
 
@@ -7348,61 +7884,164 @@ class imPrivateArea
         global $ImMailer;
         $imSettings = Configuration::getSettings();
 
-        $username = false;
-        $password = false;
-        $emailTo = false;
+        $user = $this->getUserByUsername($data);
 
-        $query = "SELECT `email`, `password` FROM `" . $this->db_table . "` ";
-        $query .= "WHERE email='" . $this->db->escapeString($data) ."'";
-        $user = $this->db->query($query);
-        if (!is_bool($user) && count($user)) {
-            $emailTo = $user[0]['email'];
-            $username = $user[0]['email'];
-            $password = $user[0]['password'];
-        } else {
-            foreach ($imSettings['access']['users'] as $uname => $user) {
-                // If the email identify a user, send the message to him, otherwise send a message to the admin
-                if ($uname == $data || $user['email'] == $data) {
-                    $emailTo = $user['email'];
-                    $username = $user['email'];
-                    $password = $user['password'];
-                    break;
-                }
+        if ($user) {
+            // ---------------------------------------------------
+            //  WSXELE-898: Find the correct email sender address
+            $from = $this->admin_email;
+            if ($imSettings['general']['use_common_email_sender_address']) {
+                $from = $imSettings['general']['common_email_sender_addres'];
             }
+            // ---------------------------------------------------
+
+            if ($user['db_stored']) {
+                // Send an email to the user
+                $emailTo = $user['email'];
+                $reset_pwd_page_url = $imSettings['general']['url'] . "imlogin.php?cngpwd=" . $this->_get_token_for_change_password($user['email']) . "&cngpwdml=" . $user['email'];
+
+                $subject = str_replace('{0}', $imSettings['general']['url'], l10n("private_area_password_recovery_mail_subject", 'Reset password request from {0}'));
+
+                $template = new Template(dirname(__FILE__) . '/emailtemplates/passwordreset.html.template.php');
+                $template->data = array(
+                    'username' => $user['firstname'],
+                    'email' => $user['email'],
+                    'reset_url' => $reset_pwd_page_url
+                );
+                $template->l10n = Configuration::getLocalizations();
+                $html = $template->render();
+            } else {
+                // Send an email to the admin
+                $emailTo = $this->admin_email;
+                $subject = str_replace("[FIELD]", $imSettings['general']['url'], l10n("private_area_password_recovery_subject_admin", "Password recovery request from [FIELD]"));
+                $html = nl2br(str_replace(
+                    array("[FIELD]", "[URL]", "\n"),
+                    array($user['email'], $imSettings['general']['url'], "<br />\n"),
+                    l10n("private_area_password_recovery_body_admin", "The user [FIELD] on [URL] wants to recover his own username and password.")
+                ));
+            }
+
+            $ImMailer->send($from, $emailTo, $subject, strip_tags($html), $html);
+            return true;
         }
-
-        if (!$username || !$password)
-            return false;
-
-        // ---------------------------------------------------
-        //  WSXELE-898: Find the correct email sender address
-        $from = $this->admin_email;
-        if ($imSettings['general']['use_common_email_sender_address']) {
-            $from = $imSettings['general']['common_email_sender_addres'];
-        }
-        // ---------------------------------------------------
-
-        if (!$emailTo) {
-            // Send an email to the admin
-            $emailTo = $from;
-            $subject = str_replace("[FIELD]", $imSettings['general']['url'], l10n("private_area_password_recovery_subject_admin", "Password recovery request from [FIELD]"));
-            $html = nl2br(str_replace(
-                array("[FIELD]", "[URL]", "\n"),
-                array($username, $imSettings['general']['url'], "<br />\n"),
-                l10n("private_area_password_recovery_body_admin", "The user [FIELD] on [URL] wants to recover his own username and password.")
-            ));
-        } else {
-            // Send an email to the user
-            $subject = str_replace("[FIELD]", $imSettings['general']['url'], l10n("private_area_password_recovery_subject_user", "Password recovered for [FIELD]"));
-            $html = l10n("private_area_password_recovery_body_user", "Here is your account data: ") . "<br /><br />\n\n";
-            $html .= "<b>" . l10n("private_area_username", "Username") . ":</b> " . $username . "<br />\n";
-            $html .= "<b>" . l10n("private_area_password", "Password") . ":</b> " . $password . "<br />\n";
-        }
-
-        $ImMailer->send($from, $emailTo, $subject, strip_tags($html), $html);
-        return true;
+        return false;
     }
 
+    /**
+     * Change password of a user and return a status code that describes the result of the operation.
+     *
+     * __Status codes__   
+     * - &nbsp;&nbsp;&nbsp;&nbsp;__0__ OK    
+     * - &nbsp;&nbsp;__-9__ New password doesn't respect password policy (the request seems to be OK, but desired password need to be changed)   
+     * - __-10__ Invalid change password request (may be a security attack)   
+     * - __-11__ Expired token (the request seems to be OK, but the token was expired)   
+     * 
+     * @param string $email The user's email
+     * @param string $token The user's change password token
+     * @param string $new_password The desired password
+     * @return int $status_code 
+     * @see imPrivateArea::messageFromStatusCode Can be used to transform $status_code to error message
+     */
+    public function change_password(string $email, string $token, string $new_password): int
+    {
+        $token_status = $this->get_token_status_code($email, $token);
+        if ($token_status == 0) {
+            if (self::_check_password_policy($new_password)) {
+                $this->db->update(array(
+                    'update' => $this->db_table,
+                    'set' => array(
+                        'validated' => 1,
+                        'password' => self::_encode_password($new_password),
+                        'crypt_encoding' => Configuration::getSettings()['access']['password_crypt']['encoding_id'],
+                        'cng_pwd_token' => null,
+                        'cng_pwd_token_expire' => null
+                    ),
+                    'where' => array('email' => $email)
+                ));
+                $this->_setLoggedUser($this->getUserByUsername($email));
+            } else {
+                // Password policy
+                return -9;
+            }
+        }
+        return $token_status;
+    }
+
+    /**
+     * Get token status code.
+     *
+     * __Status codes__   
+     * - &nbsp;&nbsp;&nbsp;&nbsp;__0__ OK    
+     * - __-10__ Invalid token (may be a security attack)   
+     * - __-11__ Expired token (the request seems to be OK, but the token was expired)   
+     * 
+     * @param string $email The user's email
+     * @param string $token The user's change password token
+     * @return int $status_code 
+     * @see imPrivateArea::messageFromStatusCode Can be used to transform $status_code to error message
+     */
+    public function get_token_status_code(string $email, string $token): int
+    {
+        if (isset($email) && is_string($email) && isset($token) && is_string($token)) {
+            $cng_pwd_info = $this->db->select(array(
+                'select' => array('cng_pwd_token_expire'),
+                'from' => $this->db_table,
+                'where' => array('email' => $email, 'cng_pwd_token' => $token)
+            ));
+            if (is_array($cng_pwd_info) && count($cng_pwd_info) == 1) {
+                $info = $cng_pwd_info[0];
+                if (!isset($info['cng_pwd_token_expire']) || !$info['cng_pwd_token_expire'] || $info['cng_pwd_token_expire'] < time()) {
+                    // Expired token
+                    return -11;
+                }
+                // OK
+                return 0;
+            }
+        }
+        // Invalid request
+        return -10;
+    }
+
+    private function _get_token_for_change_password($email): string
+    {
+        $now = time();
+        $current_token_info = $this->db->select(array(
+            'select' => array('cng_pwd_token', 'cng_pwd_token_expire'),
+            'from' => $this->db_table,
+            'where' => array('email' => $email)
+        ))[0];
+        $expire_time = $now + self::CNG_PWD_TOKEN_EXPIRE_TIME;
+        if ($now < $current_token_info['cng_pwd_token_expire']) {
+            // The token is not yet expired, let's update expire_time and return this token
+            $this->db->update(array(
+                'update' => $this->db_table,
+                'set' => array('cng_pwd_token_expire' => $expire_time),
+                'where' => array('email' => $email)
+            ));
+            return $current_token_info['cng_pwd_token'];
+        } else {
+            $token = self::_create_rnd_token();
+            while (!$this->_try_to_save_token($email, $token, $expire_time)) {
+                $token = self::_create_rnd_token();
+            }
+            return $token;
+        }
+    }
+    private function _try_to_save_token($email, $token, $expire_time): bool
+    {
+        return $this->db->update(array(
+            'update' => $this->db_table,
+            'set' => array(
+                'cng_pwd_token' => $token,
+                'cng_pwd_token_expire' => $expire_time
+            ),
+            'where' => array('email' => $email)
+        ));
+    }
+    private static function _create_rnd_token()
+    {
+        return bin2hex(random_bytes(self::CNG_PWD_TOKEN_LENGTH));
+    }
 
     /**
      * Encode the string
@@ -7508,6 +8147,18 @@ class imPrivateArea
         im_set_cookie($this->cookie_name, $this->_encode($uid, $this->salt), 0, "/"); // Expires when the browser is closed
     }
 
+    private function _setLoggedUser($user) : bool
+    {
+        $this->_setSession(
+            $user['user_type'],
+            $user['id'],
+            $user['groups'],
+            $user['email'],
+            $user['firstname'],
+            $user['lastname']
+        );
+        return true;
+    }
 
     /**
      * Get the user's hashcode
@@ -7518,7 +8169,7 @@ class imPrivateArea
      * @param  {string} $password
      * @return {string}
      */
-    private function _getUserHash($username, $password)
+    private static function _getUserHash($username, $password)
     {
         return sha1($username . ":3cea997e06cdfe42f36ba21473ca9b57:" . $password);
     }
@@ -7657,7 +8308,7 @@ class imSearch {
                         } else if (isset($object['Database']) && isset($object['Table'])) {
                             // Load from db
                             $db = getDbData($object['Database']);
-                            $dynobj->loadFromDb($db['host'], $db['user'], $db['password'], $db['database'], $object['Table']);
+                            $dynobj->loadFromDb(ImDb::from_db_data($db), $object['Table']);
                         }
                         // Replace the content
                         $needle_start = "<!-- search-tag " . $object['ObjectId'] . " start -->";
@@ -8640,15 +9291,11 @@ class ImTopic
      */
     static $captcha_code       = "";
 
-    public $comments          = null;
+    public $comments           = null;
     private $id;
+    private $db                = null;
     private $table             = "";
     private $folder            = "";
-    private $host              = "";
-    private $user              = "";
-    private $pwd               = "";
-    private $database          = "";
-    private $ratingImage       = "";
     private $storageType       = "xml";
     private $basepath          = "";
     private $posturl           = "";
@@ -8809,19 +9456,16 @@ class ImTopic
      *
      * @return {Void}
      */
-    function loadDb($host, $user, $pwd, $db, $table)
+    function loadDb($db, $table)
     {
         if ($this->comments == null)
             return;
 
-        $this->host  = $host;
-        $this->user  = $user;
-        $this->pwd   = $pwd;
         $this->db    = $db;
         $this->table = $table;
         $this->storageType = "database";
 
-        $this->comments->loadFromDb($this->host, $this->user, $this->pwd, $this->db, $this->table, $this->id);
+        $this->comments->loadFromDb($this->db, $this->table, $this->id);
     }
 
     /**
@@ -8836,17 +9480,14 @@ class ImTopic
      *
      * @return {boolean} True if the comments are saved correctly
      */
-    function saveDb($host = "", $user = "", $pwd = "", $db = "", $table = "")
+    function saveDb($db = "", $table = "")
     {
         if ($this->comments == null)
             return false;
 
-        $host  = $host != "" ? $host : $this->host;
-        $user  = $user != "" ? $user : $this->user;
-        $pwd   = $pwd != "" ? $pwd : $this->pwd;
         $db    = $db != "" ? $db : $this->db;
         $table = $table != "" ? $table : $this->table;
-        return $this->comments->saveToDb($host, $user, $pwd, $db, $table, $this->id);
+        return $this->comments->saveToDb($db, $table, $this->id);
     }
 
 

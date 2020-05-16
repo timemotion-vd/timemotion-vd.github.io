@@ -1,8 +1,5 @@
 <?php
 
-if (!defined('PHP_MIN_VERSION')) {
-    define('PHP_MIN_VERSION', '5.6.0');
-}
 include "includes.php";
 
 /**
@@ -24,7 +21,7 @@ class imAdminTest {
         $results = array();
 
         $results[] = array(
-            "name" => str_replace(array('[PHP_MIN_VERSION]', '[PHP_ACTUAL_VERSION]'), array(PHP_MIN_VERSION, PHP_VERSION), l10n('admin_test_php_version')),
+            "name" => str_replace(array('[PHP_MIN_VERSION]', '[PHP_ACTUAL_VERSION]'), array(imTest::PHP_MIN_VERSION, PHP_VERSION), l10n('admin_test_php_version')),
             "message" => l10n('admin_test_version_suggestion'),
             "success" => imTest::php_version_test()
         );
@@ -94,7 +91,7 @@ class imAdminTest {
         // Databases
         if (isset($imSettings['databases'])) {
             foreach($imSettings['databases'] as $db) {
-                $database = new ImDb($db['host'], $db['user'], $db['password'], $db['database']);
+                $database = ImDb::from_db_data($db);
                 $results[] = array(
                     "name"    => l10n('admin_test_database') . " (" . $db['description'] . ")",
                     "message" => l10n("admin_test_database_suggestion"),

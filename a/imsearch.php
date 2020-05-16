@@ -6,7 +6,7 @@
 		<meta charset="utf-8" />
 		<!--[if IE]><meta http-equiv="ImageToolbar" content="False" /><![endif]-->
 		<meta name="author" content="泰墨創意影像" />
-		<meta name="generator" content="Incomedia WebSite X5 Pro 2019.3.17 - www.websitex5.com" />
+		<meta name="generator" content="Incomedia WebSite X5 Pro 2020.1.5 - www.websitex5.com" />
 		<meta property="og:locale" content="tw" />
 		<meta property="og:type" content="website" />
 		<meta property="og:url" content="https://timemotion-vd.github.io/a/imsearch.php" />
@@ -18,19 +18,19 @@
 		<meta property="og:image:height" content="825">
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
 		
-		<link rel="stylesheet" href="style/reset.css?2019-3-17-1" media="screen,print" />
-		<link rel="stylesheet" href="style/print.css?2019-3-17-1" media="print" />
-		<link rel="stylesheet" href="style/style.css?2019-3-17-1" media="screen,print" />
-		<link rel="stylesheet" href="style/template.css?2019-3-17-1" media="screen" />
-		<link rel="stylesheet" href="pcss/imsearch.css?2019-3-17-1-637228536823674833" media="screen,print" />
-		<script src="res/jquery.js?2019-3-17-1"></script>
-		<script src="res/x5engine.js?2019-3-17-1" data-files-version="2019-3-17-1"></script>
+		<link rel="stylesheet" href="style/reset.css?2020-1-5-0" media="screen,print" />
+		<link rel="stylesheet" href="style/print.css?2020-1-5-0" media="print" />
+		<link rel="stylesheet" href="style/style.css?2020-1-5-0" media="screen,print" />
+		<link rel="stylesheet" href="style/template.css?2020-1-5-0" media="screen" />
+		<link rel="stylesheet" href="pcss/imsearch.css?2020-1-5-0-637233587798415536" media="screen,print" />
+		<script src="res/jquery.js?2020-1-5-0"></script>
+		<script src="res/x5engine.js?2020-1-5-0" data-files-version="2020-1-5-0"></script>
 		<script>
 			window.onload = function(){ checkBrowserCompatibility('Your browser does not support the features necessary to display this website.','Your browser may not support the features necessary to display this website.','[1]Update your browser[/1] or [2]continue without updating[/2].','http://outdatedbrowser.com/'); };
 			x5engine.utils.currentPagePath = 'imsearch.php';
 			x5engine.boot.push(function () { x5engine.imPageToTop.initializeButton({}); });
 		</script>
-		<link rel="icon" href="favicon.png?2019-3-17-1-637228536823654836" type="image/png" />
+		<link rel="icon" href="favicon.png?2020-1-5-0-637233587798385548" type="image/png" />
 		<script>(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)})(window,document,'script','//www.google-analytics.com/analytics.js','ga');ga('create', 'UA-152835-10','auto');ga('set', 'anonymizeIp', true);ga('send', 'pageview');</script>
 	</head>
 	<body>

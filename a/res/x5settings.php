@@ -11,7 +11,7 @@ $imSettings['general'] = array(
 	'url' => 'https://timemotion-vd.github.io/a/',
 	'homepage_url' => 'https://timemotion-vd.github.io/a/index.html',
 	'icon' => 'https://timemotion-vd.github.io/a/favImage.png',
-	'version' => '2019.3.17.1',
+	'version' => '2020.1.5.0',
 	'sitename' => '自然裡童心未泯的創作家 - 邱傑',
 	'lang_code' => 'zh-tw',
 	'public_folder' => '',
@@ -30,7 +30,7 @@ $imSettings['password_policy'] = array(
 	'minimum_characters' => '6',
 	'include_uppercase' => false,
 	'include_numeric' => false,
-	'include_special' => false,
+	'include_special' => false
 );
 /*
 |-------------------------------
@@ -90,7 +90,8 @@ $ecommerce->setSettings(array(
 	'availability_reduction_type' => 1,
 	'border_color' => 'rgba(211, 211, 211, 1)',
 	'owner_email' => 'example@example.com',
-	'vat_type' => 'included'
+	'vat_type' => 'included',
+	'availability_image' => ''
 ));
 
 $ecommerce->setPriceFormatData(array(
@@ -157,7 +158,7 @@ $imSettings['dynamicobjects'] = array(	'template' => array(
 
 $ImMailer->emailType = 'phpmailer';
 $ImMailer->exposeWsx5 = true;
-$ImMailer->header = '<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">' . "\n" . '<html>' . "\n" . '<head>' . "\n" . '<meta http-equiv="content-type" content="text/html; charset=utf-8">' . "\n" . '<meta name="generator" content="Incomedia WebSite X5 Professional 2019.3.17 - www.websitex5.com">' . "\n" . '</head>' . "\n" . '<body bgcolor="#5BB1AE" style="background-color: #5BB1AE;">' . "\n\t" . '<table border="0" cellpadding="0" align="center" cellspacing="0" style="padding: 0; margin: 0 auto; width: 700px;">' . "\n\t" . '<tr><td id="imEmailContent" style="min-height: 300px; padding: 10px; font: normal normal normal 12pt \'Noto Sans CJK TC Regular\'; color: #000000; background-color: #FFFFFF; text-decoration: none; text-align: left; width: 700px; background-color: #FFFFFF" width="700px">' . "\n\t\t";
+$ImMailer->header = '<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">' . "\n" . '<html>' . "\n" . '<head>' . "\n" . '<meta http-equiv="content-type" content="text/html; charset=utf-8">' . "\n" . '<meta name="generator" content="Incomedia WebSite X5 Professional 2020.1.5 - www.websitex5.com">' . "\n" . '</head>' . "\n" . '<body bgcolor="#5BB1AE" style="background-color: #5BB1AE;">' . "\n\t" . '<table border="0" cellpadding="0" align="center" cellspacing="0" style="padding: 0; margin: 0 auto; width: 700px;">' . "\n\t" . '<tr><td id="imEmailContent" style="min-height: 300px; padding: 10px; font: normal normal normal 12pt \'Noto Sans CJK TC Regular\'; color: #000000; background-color: #FFFFFF; text-decoration: none; text-align: left; width: 700px; background-color: #FFFFFF" width="700px">' . "\n\t\t";
 $ImMailer->footer = "\n\t" . '</td></tr>' . "\n\t" . '</table>' . "\n" . '<table width="100%"><tr><td id="imEmailFooter" style="font: normal normal normal 9pt \'Noto Sans CJK TC Regular\'; color: #FFFFFF; background-color: transparent; text-decoration: none; text-align: center;  padding: 10px; margin-top: 5px;background-color: transparent">' . "\n\t\t" . 'This e-mail contains information that is intended solely for the above mentioned addressee.<br>If you have received this e-mail by error, please notify the sender immediately and destroy it, without copying it.' . "\n\t" . '</td></tr></table>' . "\n\t" . '</body>' . "\n" . '</html>';
 $ImMailer->bodyBackground = '#FFFFFF';
 $ImMailer->bodyBackgroundEven = '#FFFFFF';

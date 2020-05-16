@@ -6,7 +6,7 @@ Configuration::getControlPanel()->accessOrRedirect();
 
 $db = getDbData($imSettings['access']['dbid']);
 $pa = new ImPrivateArea();
-$pa->setDbData($db['host'], $db['user'], $db['password'], $db['database'], $imSettings['access']['dbtable']);
+$pa->setDbData(ImDb::from_db_data($db), $imSettings['access']['dbtable']);
 if (isset($_GET['validate'])) {
 	$pa->validateWaitingUserById($_GET['validate']);
 	echo "<script>location.href='privatearea.php#user_" . $_GET['validate'] . "';</script>";
