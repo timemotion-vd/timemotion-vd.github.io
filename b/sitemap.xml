@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1" xmlns:video="http://www.google.com/schemas/sitemap-video/1.1">
+	<url>
+		<loc>https://timemotion-vd.github.io/b/index.html</loc>
+		<lastmod>2020-06-10</lastmod>
+		<changefreq>monthly</changefreq>
+		<priority>0.5</priority>
+		<image:image>
+			<image:loc>https://timemotion-vd.github.io/b/images/3840x1376.jpg</image:loc>
+			<image:caption><![CDATA[帶著桃園兒童文學翱翔的許義宗教授]]></image:caption>
+			<image:geo_location><![CDATA[桃園市蘆竹區五福一路 255 號]]></image:geo_location>
+			<image:title><![CDATA[帶著桃園兒童文學翱翔的許義宗教授]]></image:title>
+		</image:image>
+		<image:image>
+			<image:loc>https://timemotion-vd.github.io/b/images/--------.png</image:loc>
+			<image:caption><![CDATA[日期：109.6.17(三)~9.8(二)
+地點：桃園市兒童文學館(桃園市立圖書館蘆竹分館 4 樓)
+電話：(03)352-6811
+地址：桃園市蘆竹區五福一路 255 號]]></image:caption>
+			<image:geo_location><![CDATA[桃園市蘆竹區五福一路 255 號]]></image:geo_location>
+			<image:title><![CDATA[主題展覽日期、地點、地址]]></image:title>
+		</image:image>
+		<image:image>
+			<image:loc>https://timemotion-vd.github.io/b/images/--------_joj4yabb.png</image:loc>
+			<image:caption><![CDATA[109 年 7 月 4 日  小造形家～ 10:00~12:00
+109 年 8 月 1 日  小歌唱家～ 10:00~12:00
+109 年 8 月 22 日  小繪畫家～ 10:00~12:00]]></image:caption>
+			<image:geo_location><![CDATA[桃園市蘆竹區五福一路 255 號]]></image:geo_location>
+			<image:title><![CDATA[閱讀推廣活動]]></image:title>
+		</image:image>
+		<image:image>
+			<image:loc>https://timemotion-vd.github.io/b/images/----.png</image:loc>
+			<image:caption><![CDATA[指導單位：桃園市政府、桃園市議會、桃園市政府文化局
+主辦單位：桃園市立圖書館
+執行單位：泰墨創意影像
+協辦單位：魚可國際文創事業有限公司
+協力單位：財團法人十大傑出青年基金會、十大傑出青年當選人聯誼會]]></image:caption>
+			<image:geo_location><![CDATA[桃園市蘆竹區五福一路 255 號]]></image:geo_location>
+			<image:title><![CDATA[主辦單位、指導單位、執行單位、協力單位]]></image:title>
+		</image:image>
+		<image:image>
+			<image:loc>https://timemotion-vd.github.io/b/images/--------fb-logo.png</image:loc>
+			<image:caption><![CDATA[桃園市兒童文學館 FB 連結圖示]]></image:caption>
+			<image:title><![CDATA[桃園市兒童文學館 FB 連結圖示]]></image:title>
+		</image:image>
+		<image:image>
+			<image:loc>https://timemotion-vd.github.io/b/images/--------logo.png</image:loc>
+			<image:caption><![CDATA[桃園市立圖書館連結圖示]]></image:caption>
+			<image:title><![CDATA[桃園市立圖書館]]></image:title>
+		</image:image>
+	</url>
+</urlset>

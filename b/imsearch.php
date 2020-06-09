@@ -1,16 +1,16 @@
+<?php require_once("res/x5engine.php"); ?>
 <!DOCTYPE html><!-- HTML5 -->
 <html prefix="og: http://ogp.me/ns#" lang="zh-tw" dir="ltr">
 	<head>
-		<title>帶著桃園兒童文學翱翔的許義宗教授</title>
+		<title>Search - 帶著桃園兒童文學翱翔的許義宗教授</title>
 		<meta charset="utf-8" />
 		<!--[if IE]><meta http-equiv="ImageToolbar" content="False" /><![endif]-->
 		<meta name="author" content="泰墨創意影像" />
 		<meta name="generator" content="Incomedia WebSite X5 Pro 2020.1.12 - www.websitex5.com" />
-		<meta name="description" content="桃園兒童文學館桃園市立圖書館蘆竹分館 109 年兒童文學作家系列紀錄片與活動特展。" />
 		<meta property="og:locale" content="tw" />
 		<meta property="og:type" content="website" />
-		<meta property="og:url" content="https://timemotion-vd.github.io/b/index.html" />
-		<meta property="og:title" content="Home Page" />
+		<meta property="og:url" content="https://timemotion-vd.github.io/b/imsearch.php" />
+		<meta property="og:title" content="Search" />
 		<meta property="og:site_name" content="帶著桃園兒童文學翱翔的許義宗教授" />
 		<meta property="og:image" content="https://timemotion-vd.github.io/b/favImage.png" />
 		<meta property="og:image:type" content="image/png">
@@ -22,17 +22,15 @@
 		<link rel="stylesheet" href="style/print.css?2020-1-12-0" media="print" />
 		<link rel="stylesheet" href="style/style.css?2020-1-12-0" media="screen,print" />
 		<link rel="stylesheet" href="style/template.css?2020-1-12-0" media="screen" />
-		<link rel="stylesheet" href="pcss/index.css?2020-1-12-0-637273457481070992" media="screen,print" />
+		<link rel="stylesheet" href="pcss/imsearch.css?2020-1-12-0-637273457480991002" media="screen,print" />
 		<script src="res/jquery.js?2020-1-12-0"></script>
 		<script src="res/x5engine.js?2020-1-12-0" data-files-version="2020-1-12-0"></script>
 		<script>
 			window.onload = function(){ checkBrowserCompatibility('Your browser does not support the features necessary to display this website.','Your browser may not support the features necessary to display this website.','[1]Update your browser[/1] or [2]continue without updating[/2].','http://outdatedbrowser.com/'); };
-			x5engine.utils.currentPagePath = 'index.html';
-			x5engine.boot.push(function () { x5engine.parallax.start(); });
+			x5engine.utils.currentPagePath = 'imsearch.php';
 			x5engine.boot.push(function () { x5engine.imPageToTop.initializeButton({}); });
 		</script>
-		<meta name="google-site-verification" content="RfRlF-JjK_ylTRt0tZPvqGzjb4AXFfpvtoqL8Kjup0U" />
-		<link rel="icon" href="favicon.png?2020-1-12-0-637273457481021007" type="image/png" />
+		<link rel="icon" href="favicon.png?2020-1-12-0-637273457480981004" type="image/png" />
 		<script>(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)})(window,document,'script','//www.google-analytics.com/analytics.js','ga');ga('create', 'UA-152835-10','auto');ga('set', 'anonymizeIp', true);ga('send', 'pageview');</script>
 	</head>
 	<body>
@@ -42,7 +40,7 @@
 				<div id="imFooterBg"></div>
 				<div id="imPage">
 					<header id="imHeader">
-						<h1 class="imHidden">帶著桃園兒童文學翱翔的許義宗教授</h1>
+						<h1 class="imHidden">Search - 帶著桃園兒童文學翱翔的許義宗教授</h1>
 						<div id="imHeaderObjects"><div id="imHeader_imMenuObject_01_wrapper" class="template-object-wrapper"><!-- UNSEARCHABLE --><div id="imHeader_imMenuObject_01"><div id="imHeader_imMenuObject_01_container"><div class="hamburger-button hamburger-component"><div><div><div class="hamburger-bar"></div><div class="hamburger-bar"></div><div class="hamburger-bar"></div></div></div></div><div class="hamburger-menu-background-container hamburger-component">
 	<div class="hamburger-menu-background menu-mobile menu-mobile-animated hidden">
 		<div class="hamburger-menu-close-button"><span>&times;</span></div>
@@ -90,67 +88,18 @@ $(function () {$('#imStickyBar_imMenuObject_01_container > ul > li').not('.imMnM
 					<div id="imContentGraphics"></div>
 					<main id="imContent">
 						<a id="imGoToCont"></a>
-						<div id="imPageRow_1" class="imPageRow">
-						<div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; overflow: hidden;"><div id="imPageRowGraphics_1"></div></div>
-						</div>
-						<div id="imCell_1" class=""  data-responsive-sequence-number="1"> <div id="imCellStyleGraphics_1"></div><div id="imCellStyleBorders_1"></div><div id="imObjectImage_01"><div id="imObjectImage_01_container"><img src="images/3840x1376.jpg" title="主形象圖" alt="帶著桃園兒童文學翱翔的許義宗教授" />
-						</div></div></div><div id="imPageRow_2" class="imPageRow">
-						<div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; overflow: hidden;"><div id="imPageRowGraphics_2"></div></div>
-						</div>
-						<div id="imCell_2" class=""  data-responsive-sequence-number="2"> <div id="imCellStyleGraphics_2"></div><div id="imCellStyleBorders_2"></div><div id="imObjectImage_02"><div id="imObjectImage_02_container"><img src="images/--------.png" title="主題展覽日期、地點" alt="日期 109.6.17(三) - 9.8(二)、桃園市兒童文學館" />
-						</div></div></div><div id="imCell_3" class=""  data-responsive-sequence-number="3"> <div id="imCellStyleGraphics_3"></div><div id="imCellStyleBorders_3"></div><div id="imObjectImage_03"><div id="imObjectImage_03_container"><img src="images/--------_joj4yabb.png" title="閱讀推廣活動" alt="活動日期、時間" />
-						</div></div></div><div id="imCell_4" class=""  data-responsive-sequence-number="4"> <div id="imCellStyleGraphics_4"></div><div id="imCellStyleBorders_4"></div><div id="imObjectImage_04"><div id="imObjectImage_04_container"><img src="images/----.png" title="主辦單位、指導單位、執行單位、協力單位" alt="主辦單位、指導單位、執行單位、協力單位" />
-						</div></div></div><div id="imPageRow_3" class="imPageRow">
-						<div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; overflow: hidden;"><div id="imPageRowGraphics_3"></div></div>
-						</div>
-						<div id="imCell_5"></div><div id="imCell_6" class=""  data-responsive-sequence-number="6"> <div id="關於作者"></div><div id="imCellStyleGraphics_6"></div><div id="imCellStyleBorders_6"></div><div id="imTextObject_06">
-							<div data-index="0"  class="text-tab-content grid-prop current-tab "  id="imTextObject_06_tab0" style="opacity: 1; ">
-								<div class="text-inner">
-									<div data-line-height="2"><span class="fs12lh1-5">作者簡介<br></span><div><span class="fs12lh1-5">許義宗教授，早年以小園丁為筆名</span></div>
-						
-						<div><span class="fs12lh1-5">帶著一顆愛心，長年辛勤的耕耘著桃園的兒童文學這塊園地</span></div>
-						
-						<div><span class="fs12lh1-5">他創辦了《小鴿子》校刊</span></div>
-						
-						<div><span class="fs12lh1-5">讓學校裡的師生</span></div>
-						
-						<div><span class="fs12lh1-5">有個發表作品的園地</span></div>
-						
-						<div><span class="fs12lh1-5">後來這隻《小鴿子》飛遍桃園</span></div>
-						
-						<div><span class="fs12lh1-5">成為《桃縣兒童》這本桃園兒童的聯合校刊</span></div>
-						
-						<span class="fs12lh1-5">桃園也因此被美譽為「台灣兒童文學的心靈故鄉」</span><span class="fs12lh1-5"><br></span></div>
-								</div>
-							</div>
-						
-						</div>
-						</div><div id="imPageRow_4" class="imPageRow imParallax">
-						<div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; overflow: hidden;"><div id="imPageRowGraphics_4" class="imContentDataContainer imParallaxBackground" data-parallax-direction="up" data-parallax-zoom="140"></div></div>
-						</div>
-						<div id="imCell_33" class=""  data-responsive-sequence-number="7"> <div id="imCellStyleGraphics_33"></div><div id="imCellStyleBorders_33"></div><div id="imCellStyleTitle_33">連結：</div><div id="imObjectImage_33"><div id="imObjectImage_33_container"><a href="https://www.facebook.com/%E6%A1%83%E5%9C%92%E5%B8%82%E5%85%92%E7%AB%A5%E6%96%87%E5%AD%B8%E9%A4%A8-2318917791760670/"><img src="images/--------fb-logo.png" title="桃園市兒童文學館 FB" alt="桃園市兒童文學館 FB 標誌" />
-						</a>
-						<script>
-							x5engine.boot.push(function () {
-								 x5engine.imagefx.jump('#imObjectImage_33_container img', '#imObjectImage_33', 10, false);
-							});
-						</script>
-						</div></div></div><div id="imCell_34" class=""  data-responsive-sequence-number="8"> <div id="imCellStyleGraphics_34"></div><div id="imCellStyleBorders_34"></div><div id="imCellStyleTitle_34">　</div><div id="imObjectImage_34"><div id="imObjectImage_34_container"><a href="https://www.typl.gov.tw/"><img src="images/--------logo.png" title="桃園市立圖書館" alt="桃園市立圖書館標誌" />
-						</a>
-						<script>
-							x5engine.boot.push(function () {
-								 x5engine.imagefx.jump('#imObjectImage_34_container img', '#imObjectImage_34', 10, false);
-							});
-						</script>
-						</div></div></div><div id="imCell_32" class=""  data-responsive-sequence-number="9"> <div id="imCellStyleGraphics_32"></div><div id="imCellStyleBorders_32"></div><div id="imTextObject_32">
-							<div data-index="0"  class="text-tab-content grid-prop current-tab "  id="imTextObject_32_tab0" style="opacity: 1; ">
-								<div class="text-inner">
-									<div class="imTACenter"><span class="fs12lh1-5">展覽地點</span></div><div class="imTACenter"><span class="fs12lh1-5">桃園市兒童文學館</span></div><div class="imTACenter"><span class="fs12lh1-5">(桃園市立圖書館蘆竹分館 4 樓)</span></div><div class="imTACenter"><span class="fs12lh1-5">地址：桃園市蘆竹區五福一路255號 </span></div><div></div>
-								</div>
-							</div>
-						
+						<div id="imSearchPage">
+						<h2 id="imPgTitle">Search results</h2>
+						<?php
+						$search = new imSearch();
+						$keys = isset($_GET['search']) ? @htmlspecialchars($_GET['search']) : "";
+						$page = isset($_GET['page']) ? @htmlspecialchars($_GET['page']) : 0;
+						$type = isset($_GET['type']) ? @htmlspecialchars($_GET['type']) : "pages"; ?>
+						<div class="searchPageContainer">
+						<?php echo $search->search($keys, $page, $type); ?>
 						</div>
 						</div>
+						
 					</main>
 					<footer id="imFooter">
 						<div id="imFooterObjects"><div id="imFooter_imObjectTitle_02_wrapper" class="template-object-wrapper"><div id="imFooter_imObjectTitle_02"><span id ="imFooter_imObjectTitle_02_text" >Time Motion Visual Design © 2020</span></div></div></div>
