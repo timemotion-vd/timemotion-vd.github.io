@@ -54,7 +54,7 @@ $imSettings['search']['images'] = array(
 		'title' => '許義宗',
 		'description' => '許義宗',
 		'location' => '',
-		'src' => 'images/_M0A1859s.png',
+		'src' => 'images/M0A1859s.png',
 		'page' => 'index.html'
 	),
 	array(
