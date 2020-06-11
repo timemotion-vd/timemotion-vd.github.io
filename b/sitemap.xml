@@ -2,7 +2,7 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1" xmlns:video="http://www.google.com/schemas/sitemap-video/1.1">
 	<url>
 		<loc>https://timemotion-vd.github.io/b/index.html</loc>
-		<lastmod>2020-06-10</lastmod>
+		<lastmod>2020-06-11</lastmod>
 		<changefreq>monthly</changefreq>
 		<priority>0.5</priority>
 		<image:image>
@@ -37,6 +37,11 @@
 協力單位：財團法人十大傑出青年基金會、十大傑出青年當選人聯誼會]]></image:caption>
 			<image:geo_location><![CDATA[桃園市蘆竹區五福一路 255 號]]></image:geo_location>
 			<image:title><![CDATA[主辦單位、指導單位、執行單位、協力單位]]></image:title>
+		</image:image>
+		<image:image>
+			<image:loc>https://timemotion-vd.github.io/b/images/_M0A1859s.png</image:loc>
+			<image:caption><![CDATA[許義宗]]></image:caption>
+			<image:title><![CDATA[許義宗]]></image:title>
 		</image:image>
 		<image:image>
 			<image:loc>https://timemotion-vd.github.io/b/images/--------fb-logo.png</image:loc>

@@ -51,6 +51,13 @@ $imSettings['search']['images'] = array(
 		'page' => 'index.html'
 	),
 	array(
+		'title' => '許義宗',
+		'description' => '許義宗',
+		'location' => '',
+		'src' => 'images/_M0A1859s.png',
+		'page' => 'index.html'
+	),
+	array(
 		'title' => '桃園市兒童文學館 FB 連結圖示',
 		'description' => '桃園市兒童文學館 FB 連結圖示',
 		'location' => '',
