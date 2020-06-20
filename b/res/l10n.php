@@ -469,6 +469,7 @@ The maximum quantity in stock is [MAXQUANTITY].';
 	$l10n['private_area_password_recovery_not_equals_passwords'] = 'Both passwords must match.';
 	$l10n['private_area_password_recovery_send'] = 'Send';
 	$l10n['private_area_password_recovery_title'] = 'Password Reset';
+	$l10n['cart_provisional_amount_info'] = 'This is a provisional and approximate summary of the total amount.<br>You\'ll be able to define further details before completing your order.';
 
 
 // End of file l10n.php

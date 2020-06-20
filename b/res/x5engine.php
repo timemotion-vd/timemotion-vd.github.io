@@ -229,51 +229,6 @@ class imBlog
     }
 
     /**
-     * Get the schema.org tag for a post
-     * @param  $id    The post id
-     * @return string The HTML tag
-     */
-    function getSchemaTag($id, $tabs = "") {
-        global $imSettings;
-        $html = "";
-
-        if (!isset($imSettings['blog']['posts'][$id])) {
-            return $html;
-        }
-        $post = $imSettings['blog']['posts'][$id];
-        $html .= $tabs . "<script type=\"application/ld+json\">\n";
-        $html .= $tabs . "\t{\n";
-        $html .= $tabs . "\t\t\"@context\": \"http://schema.org\",\n";
-        $html .= $tabs . "\t\t\"@type\": \"BlogPosting\",\n";
-        $html .= $tabs . "\t\t\"headline\": \"" . $post['title'] . "\",\n";
-        $html .= $tabs . "\t\t\"publisher\": {\n";
-        $html .= $tabs . "\t\t\t\"@context\": \"http://schema.org\",\n";
-        $html .= $tabs . "\t\t\t\"@type\": \"Organization\",\n";
-        $html .= $tabs . "\t\t\t\"name\": \"" . $imSettings['general']['sitename'] . "\"";
-        if (strlen($imSettings['general']['icon'])) {
-            $html .= $tabs . ",\n\t\t\t\"logo\": {\n";
-            $html .= $tabs . "\t\t\t\t\"@context\": \"http://schema.org\",\n";
-            $html .= $tabs . "\t\t\t\t\"@type\": \"ImageObject\",\n";
-            $html .= $tabs . "\t\t\t\t\"url\": \"" . $imSettings['general']['icon'] . "\"\n";
-            $html .= $tabs . "\t\t\t}";
-        }
-        $html .= $tabs . "\n\t\t},\n";
-        $html .= $tabs . "\t\t\"author\": {\n";
-        $html .= $tabs . "\t\t\t\"@context\": \"http://schema.org\",\n";
-        $html .= $tabs . "\t\t\t\"@type\": \"Person\",\n";
-        $html .= $tabs . "\t\t\t\"name\": \"" . $post['author'] . "\"\n";
-        $html .= $tabs . "\t\t},\n";
-        $html .= $tabs . "\t\t\"datePublished\": \"" . $post['timestamp'] . "\"";
-        if (isset($post['opengraph']['postimage'])) {
-            $html .= $tabs . ",\n\t\t\"image\": [\n";
-            $html .= $tabs . "\t\t\t\"" . $post['opengraph']['postimage'] . "\"\n";
-            $html .= $tabs . "\t\t]";
-        }
-        $html .= $tabs . "\n\t}\n";
-        $html .= $tabs . "</script>\n";
-    }
-
-    /**
      * Get the open graph tags for a post
      * @param  $id   The post id
      * @param  $tabs The tabs (String) to prepend to each tag
@@ -396,6 +351,61 @@ class imBlog
     }
 
     /**
+     * Get the posts enabled for visualization filtered by category, author, tag, etc.
+     * Possible filter names: posts_author, posts_cat, posts_month, posts_tag
+     * @param array $filters associative array $filter_name => $filter_value. es: array('posts_author' => 'the author name').
+     * @return array
+     */
+    function getFilteredPosts($filters)
+    {
+        global $imSettings;
+        $utcTime = time();
+        $posts = array();
+        if (is_array($filters)) {
+            foreach ($filters as $filter_name => $filter_value) {
+                if($filter_value == '|All|'){
+                    return $this->getPosts();
+                }
+                if (isset($imSettings['blog'][$filter_name][$filter_value])) {
+                    foreach ($imSettings['blog'][$filter_name][$filter_value] as $id) {
+                        if (isset($imSettings['blog']['posts'][$id]) && $imSettings['blog']['posts'][$id]['utc_time'] <= $utcTime) {
+                            $posts[$id] = $imSettings['blog']['posts'][$id];
+                        }
+                    }
+                }
+            }
+        }
+        return $posts;
+    }
+
+    function getPostsFromUrlData()
+    {
+        global $imSettings;
+        $data = $this->parseUrlArray(@$_GET);
+        if (isset($data['id'])) {
+            return isset($imSettings['blog']['posts'][$data['id']]) ? array($data['id'] => $imSettings['blog']['posts'][$data['id']]) : array();
+        } else {
+            $posts = array();
+            if (isset($data['category'])) {
+                $posts = $this->getCategoryPosts($data['category']);
+            } else if (isset($data['author'])) {
+                $posts = $this->getAuthorPosts($data['author']);
+            } else if (isset($data['tag'])) {
+                $posts = $this->getTagPosts($data['tag']);
+            } else if (isset($data['month'])) {
+                $posts = $this->getMonthPosts($data['month']);
+            } else if (isset($data['search'])) {
+                $posts = $this->getSearchPosts($data['search']);
+            } else {
+                $posts = $this->getPosts();
+            }
+            $start = isset($data['start']) ? max(0, (int) $data['start']) : 0;
+            $length = isset($data['length']) ? (int) $data['length'] : $imSettings['blog']['home_posts_number'];
+            return array_slice($posts, $start, $length);
+        }
+    }
+
+    /**
      * Get Unescaped Category
      * @return boolean
      */
@@ -431,112 +441,54 @@ class imBlog
      * Get the count of valid posts in a category
      * @return integer
      */
-    function getCategoryPostCount($category) {
-        global $imSettings;
-        $bps = isset($imSettings['blog']['posts_cat'][$category]) ? $imSettings['blog']['posts_cat'][$category] : false;
-        if (!is_array($bps))
-            return 0;
-        $count = 0;
-        $utcTime = time();
-        foreach ($bps as $id) {
-            if (!isset($imSettings['blog']['posts'][$id])) continue;
-            if ($imSettings['blog']['posts'][$id]['utc_time'] <= $utcTime) {
-                $count++;
-            }
-        }
-        return $count;
+    function getCategoryPostCount($category)
+    {
+        return count($this->getCategoryPosts($category));
     }
 
     /**
      * Get the count of valid posts by an author
      * @return integer
      */
-    function getAuthorPostCount($author) {
-        global $imSettings;
-        $bps = isset($imSettings['blog']['posts_author'][$author]) ? $imSettings['blog']['posts_author'][$author] : false;
-        if (!is_array($bps))
-            return 0;
-        $count = 0;
-        $utcTime = time();
-        foreach ($bps as $id) {
-            if (!isset($imSettings['blog']['posts'][$id])) continue;
-            if ($imSettings['blog']['posts'][$id]['utc_time'] <= $utcTime) {
-                $count++;
-            }
-        }
-        return $count;
+    function getAuthorPostCount($author)
+    {
+        return count($this->getAuthorPosts($author));
     }
 
     /**
      * Get the posts enabled for visualization in a category
      * @return array
      */
-    function getCategoryPosts($category) {
-        global $imSettings;
-        $bps = isset($imSettings['blog']['posts_cat'][$category]) ? $imSettings['blog']['posts_cat'][$category] : false;
-        if (!is_array($bps))
-            return 0;
-        $posts = array();
-        $utcTime = time();
-        foreach ($bps as $id) {
-            if (!isset($imSettings['blog']['posts'][$id])) continue;
-            if ($imSettings['blog']['posts'][$id]['utc_time'] <= $utcTime) {
-                $posts[$id] = $imSettings['blog']['posts'][$id];
-            }
-        }
-        return $posts;
+    function getCategoryPosts($category)
+    {
+        return $this->getFilteredPosts(array('posts_cat' => $category));
     }
 
     /**
      * Get the posts by an author
      * @return array
      */
-    function getAuthorPosts($author) {
-        global $imSettings;
-        $bps = isset($imSettings['blog']['posts_author'][$author]) ? $imSettings['blog']['posts_author'][$author] : false;
-        if (!is_array($bps))
-            return 0;
-        $posts = array();
-        $utcTime = time();
-        foreach ($bps as $id) {
-            if (!isset($imSettings['blog']['posts'][$id])) continue;
-            if ($imSettings['blog']['posts'][$id]['utc_time'] <= $utcTime) {
-                $posts[$id] = $imSettings['blog']['posts'][$id];
-            }
-        }
-        return $posts;
+    function getAuthorPosts($author)
+    {
+        return $this->getFilteredPosts(array('posts_author' => $author));
     }
 
     /**
      * Get the count of valid posts in a Tag
      * @return integer
      */
-    function getTagPostCount($tag) {
-        global $imSettings;
-        $count = 0;
-        $utcTime = time();
-        foreach ($imSettings['blog']['posts'] as $id => $post) {
-            if ($post['utc_time'] <= $utcTime && in_array($tag, $post['tag'])) {
-                $count++;
-            }
-        }
-        return $count;
+    function getTagPostCount($tag)
+    {
+        return count($this->getTagPosts($tag));
     }
 
     /**
      * Get the posts enabled for visualization in a tag
      * @return array
      */
-    function getTagPosts($tag) {
-        global $imSettings;
-        $posts = array();
-        $utcTime = time();
-        foreach ($imSettings['blog']['posts'] as $id => $post) {
-            if ($post['utc_time'] <= $utcTime && in_array($tag, $post['tag'])) {
-                $posts[$id] = $post;
-            }
-        }
-        return $posts;
+    function getTagPosts($tag)
+    {
+        return $this->getFilteredPosts(array('posts_tag' => $tag));
     }
 
     /**
@@ -544,19 +496,9 @@ class imBlog
      * @param  string $month
      * @return integer
      */
-    function getMonthPostsCount($month) {
-        global $imSettings;
-        $count = 0;
-        $utcTime = time();
-        if (!isset($imSettings['blog']['posts_month'][$month])) {
-            return 0;
-        }
-        foreach ($imSettings['blog']['posts_month'][$month] as $id) {
-            if (isset($imSettings['blog']['posts'][$id]) && $imSettings['blog']['posts'][$id]['utc_time'] < $utcTime) {
-                $count++;
-            }
-        }
-        return $count;
+    function getMonthPostsCount($month)
+    {
+        return count($this->getMonthPosts($month));
     }
 
     /**
@@ -564,19 +506,9 @@ class imBlog
      * @param  string $month
      * @return array
      */
-    function getMonthPosts($month) {
-        global $imSettings;
-        $posts = array();
-        $utcTime = time();
-        if (!isset($imSettings['blog']['posts_month'][$month])) {
-            return array();
-        }
-        foreach ($imSettings['blog']['posts_month'][$month] as $id) {
-            if (isset($imSettings['blog']['posts'][$id]) && $imSettings['blog']['posts'][$id]['utc_time'] < $utcTime) {
-                $posts[$id] = $imSettings['blog']['posts'][$id];
-            }
-        }
-        return $posts;
+    function getMonthPosts($month)
+    {
+        return $this->getFilteredPosts(array('posts_month' => $month));
     }
 
     /**
@@ -724,6 +656,48 @@ class imBlog
         }
     }
 
+    function getRichDataType($amp = false)
+    {
+        $rich_data = $this->getRichDataFromPosts($this->getPostsFromUrlData(), $amp);
+        if (!is_null($rich_data)) {
+            return json_encode($rich_data, JSON_PRETTY_PRINT);
+        }
+        return null;
+    }
+
+    function getRichDataFromPosts($posts, $amp = false)
+    {
+        global $imSettings;
+        $count = count($posts);
+        if ($count == 1) {
+            $post_rich_data = $imSettings['blog']['posts'][array_keys($posts)[0]]['rich_data_type'];
+            if ($amp && isset($imSettings['blog']['amp_logo'])) {
+                $post_rich_data['publisher']['logo'] = $imSettings['blog']['amp_logo'];
+                if ($post_rich_data['author']['@type'] == 'Organization') {
+                    $post_rich_data['author']['logo'] = $imSettings['blog']['amp_logo'];
+                }
+            }
+            return $post_rich_data;
+        } else if ($count > 0) {
+            $rich_data =  array(
+                '@context' => 'https://schema.org',
+                '@type' => 'ItemList',
+                'numberOfItems' => $count,
+                'itemListElement' => array()
+            );
+            $count = 1;
+            foreach ($posts as $id => $post) {
+                $rich_data['itemListElement'][] = array(
+                    '@type' => 'ListItem',
+                    'position' => $count++,
+                    'url' => $post['rich_data_type'][0]['mainEntityOfPage']
+                );
+            }
+            return $rich_data;
+        }
+        return null;
+    }
+    
     /**
      * Show a post
      *
@@ -756,14 +730,14 @@ class imBlog
             }
 
             echo "<header>\n";
-            echo "  <" . $bp['title_heading_tag'] . " class=\"imPgTitle\" style=\"display: block;\" itemprop=\"headline\">" . $bp['title'] . "</" . $bp['title_heading_tag'] . ">\n";
+            echo "  <" . $bp['title_heading_tag'] . " class=\"imPgTitle\" style=\"display: block;\">" . $bp['title'] . "</" . $bp['title_heading_tag'] . ">\n";
             echo "</header>\n";
 
             // Publisher Microdata
-            echo "<span itemprop=\"publisher\" itemscope itemtype=\"http://schema.org/Organization\" style=\"display: none\">";
-            echo "<span itemprop=\"name\">" . $imSettings['general']['sitename'] . "</span>";
+            echo "<span style=\"display: none\">";
+            echo "<span >" . $imSettings['general']['sitename'] . "</span>";
             if (strlen($imSettings['general']['icon'])) {
-                echo "<img itemprop=\"logo\" src=\"" . $imSettings['general']['icon'] . "\" />";
+                echo "<img src=\"" . $imSettings['general']['icon'] . "\" />";
             }
             echo "</span>";
 
@@ -771,10 +745,10 @@ class imBlog
             if ($bp['author'] != "" || $bp['category'] != "") {
                 echo l10n('blog_published') . " ";
                 if ($bp['author'] != "") {
-                    echo l10n('blog_by') . " <a href=\"?author=" . urlencode(str_replace(' ', '_', $bp['author'])) . "\" target=\"_blank\" itemprop=\"author\"><span itemscope itemtype=\"http://schema.org/Person\"><strong itemprop=\"name\">" . $bp['author'] . "</strong></span></a> ";
+                    echo l10n('blog_by') . " <a href=\"?author=" . urlencode(str_replace(' ', '_', $bp['author'])) . "\" target=\"_blank\"><span><strong>" . $bp['author'] . "</strong></span></a> ";
                 }
                 if ($bp['category'] != "") {
-                    echo l10n('blog_in') . " <a href=\"?category=" . urlencode(str_replace(' ', '_', $bp['category'])) . "\" target=\"_blank\"><span itemprop=\"about\">" . $bp['category'] . "</span></a> ";
+                    echo l10n('blog_in') . " <a href=\"?category=" . urlencode(str_replace(' ', '_', $bp['category'])) . "\" target=\"_blank\"><span>" . $bp['category'] . "</span></a> ";
                 }
                 echo "&middot; ";
             }
@@ -794,7 +768,7 @@ class imBlog
                 echo $cover_html;
             }
 
-            echo "<div class=\"imBlogPostBody\" itemprop=\"articleBody\">\n";
+            echo "<div class=\"imBlogPostBody\">\n";
 
             // Check if post's body contains PHP code: in this case evaluate it
             if (strpos($bp['body'], '<?php') !== false && strpos($bp['body'], '?>') !== false) {
@@ -836,7 +810,7 @@ class imBlog
 
             // Schema.org Image
             if (isset($bp['opengraph']['postimage'])) {
-                echo "<img src=\"../" . $bp['opengraph']['postimage'] . "\" itemprop=\"image\" style=\"display: none\" alt=\"\">";
+                echo "<img src=\"../" . $bp['opengraph']['postimage'] . "\" style=\"display: none\" alt=\"\">";
             }
 
             if ($bp['comments']) {
@@ -1155,12 +1129,11 @@ class imBlog
     function showCategory($category)
     {
         global $imSettings;
-        $isAllCategoriesPage = $category == "|All|" ? true : false;
         $start = isset($_GET['start']) ? max(0, (int)$_GET['start']) : 0;
         $length = isset($_GET['length']) ? (int)$_GET['length'] : $imSettings['blog']['home_posts_number'];
-        $count = $isAllCategoriesPage ? $this->getPostsCount() : $this->getCategoryPostCount($category);
+        $bps = array_values($this->getCategoryPosts($category));
+        $count = count($bps);
 
-        $bps = $isAllCategoriesPage ? array_values($this->getPosts()) : array_values($this->getCategoryPosts($category));
         $this->showPosts($bps, $start, $length, $count);
         $this->paginate("?category=" . urlencode(str_replace(' ', '_', $category)) . "&", $start, $length, $count);
     }
@@ -1221,6 +1194,17 @@ class imBlog
         $bps = array_values($this->getPosts());
         $this->showPosts($bps, $start, $length, $bpsc);
         $this->paginate("?", $start, $length, $bpsc);
+    }
+
+    function getSearchPosts($search)
+    {
+        $posts = array();
+        foreach ($this->getPosts() as $id => $post) {
+            if (stristr($post['title'], $search) || stristr($post['summary'], $search) || stristr($post['body'], $search)) {
+                $posts[$id] = $post;
+            }
+        }
+        return $posts;
     }
 
     /**
@@ -6348,7 +6332,7 @@ class ImForm
     {
         $this->fields[] = array(
             "label"     => $label,
-            "value"     => $value,
+            "value"     => is_null($value) ? "" : $value,
             "dbname"    => $dbname,
             "isSeparator" => $isSeparator
         );
