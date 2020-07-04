@@ -39,11 +39,6 @@
 			<image:title><![CDATA[主辦單位、指導單位、執行單位、協力單位]]></image:title>
 		</image:image>
 		<image:image>
-			<image:loc>https://timemotion-vd.github.io/b/images/M0A1859s.png</image:loc>
-			<image:caption><![CDATA[許義宗]]></image:caption>
-			<image:title><![CDATA[許義宗]]></image:title>
-		</image:image>
-		<image:image>
 			<image:loc>https://timemotion-vd.github.io/b/images/fb-logo.png</image:loc>
 			<image:caption><![CDATA[桃園市兒童文學館 FB 連結圖示]]></image:caption>
 			<image:title><![CDATA[桃園市兒童文學館 FB 連結圖示]]></image:title>
@@ -52,6 +47,11 @@
 			<image:loc>https://timemotion-vd.github.io/b/images/logo.png</image:loc>
 			<image:caption><![CDATA[桃園市立圖書館連結圖示]]></image:caption>
 			<image:title><![CDATA[桃園市立圖書館]]></image:title>
+		</image:image>
+		<image:image>
+			<image:loc>https://timemotion-vd.github.io/b/images/M0A1859s.png</image:loc>
+			<image:caption><![CDATA[許義宗]]></image:caption>
+			<image:title><![CDATA[許義宗]]></image:title>
 		</image:image>
 	</url>
 </urlset>
