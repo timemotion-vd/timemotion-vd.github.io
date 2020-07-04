@@ -61,14 +61,14 @@ $imSettings['search']['images'] = array(
 		'title' => '桃園市兒童文學館 FB 連結圖示',
 		'description' => '桃園市兒童文學館 FB 連結圖示',
 		'location' => '',
-		'src' => 'images/--------fb-logo.png',
+		'src' => 'images/fb-logo.png',
 		'page' => 'index.html'
 	),
 	array(
 		'title' => '桃園市立圖書館',
 		'description' => '桃園市立圖書館連結圖示',
 		'location' => '',
-		'src' => 'images/--------logo.png',
+		'src' => 'images/logo.png',
 		'page' => 'index.html'
 	)
 );

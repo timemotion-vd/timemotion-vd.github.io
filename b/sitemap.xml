@@ -2,7 +2,7 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1" xmlns:video="http://www.google.com/schemas/sitemap-video/1.1">
 	<url>
 		<loc>https://timemotion-vd.github.io/b/index.html</loc>
-		<lastmod>2020-06-20</lastmod>
+		<lastmod>2020-07-04</lastmod>
 		<changefreq>monthly</changefreq>
 		<priority>0.5</priority>
 		<image:image>
@@ -44,12 +44,12 @@
 			<image:title><![CDATA[許義宗]]></image:title>
 		</image:image>
 		<image:image>
-			<image:loc>https://timemotion-vd.github.io/b/images/--------fb-logo.png</image:loc>
+			<image:loc>https://timemotion-vd.github.io/b/images/fb-logo.png</image:loc>
 			<image:caption><![CDATA[桃園市兒童文學館 FB 連結圖示]]></image:caption>
 			<image:title><![CDATA[桃園市兒童文學館 FB 連結圖示]]></image:title>
 		</image:image>
 		<image:image>
-			<image:loc>https://timemotion-vd.github.io/b/images/--------logo.png</image:loc>
+			<image:loc>https://timemotion-vd.github.io/b/images/logo.png</image:loc>
 			<image:caption><![CDATA[桃園市立圖書館連結圖示]]></image:caption>
 			<image:title><![CDATA[桃園市立圖書館]]></image:title>
 		</image:image>
