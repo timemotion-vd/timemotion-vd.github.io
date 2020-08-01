@@ -40,7 +40,7 @@ $imSettings['search']['images'] = array(
 		'title' => '閱讀推廣活動',
 		'description' => '109 年 7 月 4 日  小造形家～ 10:00~12:00<br />109 年 8 月 1 日  小歌唱家～ 10:00~12:00<br />109 年 8 月 22 日  小繪畫家～ 10:00~12:00',
 		'location' => '桃園市蘆竹區五福一路 255 號',
-		'src' => 'images/--------_joj4yabb.png',
+		'src' => 'images/--------_nr8hwaaz.png',
 		'page' => 'index.html'
 	),
 	array(
