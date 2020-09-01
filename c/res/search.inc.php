@@ -47,7 +47,7 @@ $imSettings['search']['images'] = array(
 		'title' => '主辦單位、指導單位、執行單位、協力單位',
 		'description' => '指導單位：桃園市政府、桃園市議會、桃園市政府文化局<br />主辦單位：桃園市立圖書館<br />執行單位：泰墨創意影像<br />協辦單位：魚可國際文創事業有限公司',
 		'location' => '桃園市蘆竹區五福一路 255 號',
-		'src' => 'images/----.png',
+		'src' => 'images/-----_04.gif',
 		'page' => 'index.html'
 	),
 	array(

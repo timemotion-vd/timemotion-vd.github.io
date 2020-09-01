@@ -2,7 +2,7 @@
 <!DOCTYPE html><!-- HTML5 -->
 <html prefix="og: http://ogp.me/ns#" lang="zh-tw" dir="ltr">
 	<head>
-		<title>Search - 愛與勇氣－用故事冒險的孩子王－黃登漢</title>
+		<title>Search - 愛與勇氣 用故事冒險的孩子王 黃登漢</title>
 		<meta charset="utf-8" />
 		<!--[if IE]><meta http-equiv="ImageToolbar" content="False" /><![endif]-->
 		<meta name="author" content="泰墨創意影像" />
@@ -11,7 +11,7 @@
 		<meta property="og:type" content="website" />
 		<meta property="og:url" content="https://timemotion-vd.github.io/c/imsearch.php" />
 		<meta property="og:title" content="Search" />
-		<meta property="og:site_name" content="愛與勇氣－用故事冒險的孩子王－黃登漢" />
+		<meta property="og:site_name" content="愛與勇氣 用故事冒險的孩子王 黃登漢" />
 		<meta property="og:image" content="https://timemotion-vd.github.io/c/favImage.png" />
 		<meta property="og:image:type" content="image/png">
 		<meta property="og:image:width" content="1920">
@@ -22,7 +22,7 @@
 		<link rel="stylesheet" href="style/print.css?2020-2-5-1" media="print" />
 		<link rel="stylesheet" href="style/style.css?2020-2-5-1" media="screen,print" />
 		<link rel="stylesheet" href="style/template.css?2020-2-5-1" media="screen" />
-		<link rel="stylesheet" href="pcss/imsearch.css?2020-2-5-1-637345909321808620" media="screen,print" />
+		<link rel="stylesheet" href="pcss/imsearch.css?2020-2-5-1-637345919352583041" media="screen,print" />
 		<script src="res/jquery.js?2020-2-5-1"></script>
 		<script src="res/x5engine.js?2020-2-5-1" data-files-version="2020-2-5-1"></script>
 		<script>
@@ -30,7 +30,7 @@
 			x5engine.utils.currentPagePath = 'imsearch.php';
 			x5engine.boot.push(function () { x5engine.imPageToTop.initializeButton({}); });
 		</script>
-		<link rel="icon" href="favicon.png?2020-2-5-1-637345909321788619" type="image/png" />
+		<link rel="icon" href="favicon.png?2020-2-5-1-637345919352573045" type="image/png" />
 		<script>(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)})(window,document,'script','//www.google-analytics.com/analytics.js','ga');ga('create', 'UA-152835-10','auto');ga('set', 'anonymizeIp', true);ga('send', 'pageview');</script>
 	</head>
 	<body>
@@ -40,7 +40,7 @@
 				<div id="imFooterBg"></div>
 				<div id="imPage">
 					<header id="imHeader">
-						<h1 class="imHidden">Search - 愛與勇氣－用故事冒險的孩子王－黃登漢</h1>
+						<h1 class="imHidden">Search - 愛與勇氣 用故事冒險的孩子王 黃登漢</h1>
 						<div id="imHeaderObjects"><div id="imHeader_imMenuObject_01_wrapper" class="template-object-wrapper"><!-- UNSEARCHABLE --><div id="imHeader_imMenuObject_01"><div id="imHeader_imMenuObject_01_container"><div class="hamburger-button hamburger-component"><div><div><div class="hamburger-bar"></div><div class="hamburger-bar"></div><div class="hamburger-bar"></div></div></div></div><div class="hamburger-menu-background-container hamburger-component">
 	<div class="hamburger-menu-background menu-mobile menu-mobile-animated hidden">
 		<div class="hamburger-menu-close-button"><span>&times;</span></div>
