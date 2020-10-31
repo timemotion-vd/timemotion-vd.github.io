@@ -10364,7 +10364,7 @@ if (!function_exists('htmlspecialchars_decode')) {
 
 if (!function_exists('json_encode')) {
     /**
-     * Fallback for json_encode before PHP 5.2
+     * Fallback for json_encode
      * @ignore
      */
     function json_encode($data)
@@ -10379,7 +10379,7 @@ if (!function_exists('json_encode')) {
             case 'float':
                 return $data;
             case 'string':
-                return '"' . addslashes($data) . '"';
+                return '"' . addcslashes($data, "\/\"\n\r\f\t") . '"';
             case 'object':
                 $data = get_object_vars($data);
             case 'array':
